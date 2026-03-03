@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a3a5c">
+<title>Bakhvi HPP - გარემოს მონიტორინგი</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --primary: #1a3a5c;
+    --primary-light: #2a5a8c;
+    --accent: #e8a020;
+    --green: #2e7d32;
+    --red: #c62828;
+    --gray: #546e7a;
+    --bg: #f0f3f7;
+    --card: #ffffff;
+    --border: #cfd8dc;
+    --text: #1c2b36;
+    --shadow: 0 2px 12px rgba(26,58,92,0.10);
+    --nav-h: 56px;
+    --tab-h: 48px;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html { font-size: 16px; }
+
+  body {
+    font-family: 'Noto Sans Georgian', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+  }
+
+  /* ===== TOP NAV ===== */
+  .topnav {
+    background: var(--primary);
+    color: white;
+    position: sticky; top: 0; z-index: 200;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .topnav-inner {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    height: var(--nav-h);
+    gap: 8px;
+    max-width: 1200px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .logo-b {
+    background: var(--accent);
+    color: var(--primary);
+    font-weight: 900;
+    font-size: 1.3rem;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .topnav h1 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.2;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topnav h1 span { display: none; }
+
+  /* DBX buttons row */
+  .nav-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .btn-dbx {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: white;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-dbx:hover { background: rgba(255,255,255,0.25); }
+
+  /* Sync status */
+  #syncStatus {
+    font-size: 0.72rem;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* offline badge */
+  .offline-badge {
+    display: none;
+    background: var(--accent);
+    color: var(--primary);
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .offline-badge.show { display: block; }
+
+  /* ===== BOTTOM TAB BAR (mobile) ===== */
+  .tab-bar {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--tab-h);
+    background: var(--primary);
+    z-index: 200;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.2);
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .tab-bar-inner {
+    display: flex;
+    height: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.6rem;
+    transition: color 0.15s, background 0.15s;
+    padding: 0;
+    border-radius: 0;
+  }
+  .tab-btn .tab-icon { font-size: 1.3rem; line-height: 1; }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn.active .tab-icon { transform: scale(1.1); }
+
+  /* Desktop nav tabs (hidden on mobile) */
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .nav-tab {
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: white;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.82rem;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .nav-tab.active, .nav-tab:hover { background: var(--accent); color: var(--primary); font-weight: 600; }
+
+  /* ===== MAIN CONTAINER ===== */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 14px 12px 80px;
+  }
+
+  /* ===== PANELS ===== */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ===== FORM CARD ===== */
+  .form-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .form-header {
+    background: var(--primary);
+    color: white;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .form-header .logo-b { width: 40px; height: 40px; font-size: 1.4rem; flex-shrink: 0; }
+  .form-header-text h2 { font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
+  .form-header-text p { font-size: 0.72rem; opacity: 0.8; margin-top: 2px; }
+
+  /* ===== META FIELDS ===== */
+  .form-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 2px solid var(--border);
+  }
+  .meta-field {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .meta-field:nth-child(even) { border-right: none; }
+  .meta-field label {
+    font-size: 0.72rem;
+    color: var(--gray);
+    white-space: nowrap;
+    font-weight: 600;
+    min-width: 64px;
+  }
+  .meta-field input, .meta-field select {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: var(--text);
+    background: transparent;
+    min-width: 0;
+    padding: 2px 0;
+  }
+  /* Larger touch targets for mobile meta fields */
+  .meta-field input[type="date"],
+  .meta-field input[type="time"] {
+    font-size: 0.9rem;
+  }
+
+  /* ===== SECTION TABLE ===== */
+  .section-header {
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 8px 14px;
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: var(--nav-h);
+    z-index: 10;
+  }
+
+  /* Desktop: full table */
+  .compliance-table { width: 100%; border-collapse: collapse; }
+  .compliance-table th {
+    background: var(--primary);
+    color: white;
+    padding: 7px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .compliance-table th:first-child { text-align: left; padding-left: 14px; }
+  .compliance-table td {
+    padding: 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .item-row { cursor: pointer; transition: background 0.1s; }
+  .item-row:hover { background: #f0f6ff; }
+  .item-row.answered-yes td { background: #f1f8e9; }
+  .item-row.answered-no  td { background: #fff3f3; }
+  .item-row.answered-na  td { background: #f9f9f9; }
+
+  .item-text { padding: 9px 8px 9px 14px; font-size: 0.84rem; line-height: 1.45; }
+  .item-num  { padding: 9px 6px; text-align: center; font-size: 0.72rem; color: var(--gray); width: 36px; }
+
+  /* Radio cell */
+  .radio-cell { width: 50px; text-align: center; }
+  .radio-cell input[type="radio"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+  .radio-cell label { display: block; padding: 10px 0; cursor: pointer; }
+
+  /* Notes row */
+  .notes-row td { padding: 0 14px 8px; }
+  .notes-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    outline: none;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--gray);
+    padding: 4px 0;
+    background: transparent;
+    resize: none;
+  }
+
+  /* ===== MOBILE CARD LAYOUT ===== */
+  .mobile-item-card {
+    display: none;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 14px;
+    transition: background 0.1s;
+  }
+  .mobile-item-card.answered-yes { background: #f1f8e9; }
+  .mobile-item-card.answered-no  { background: #fff3f3; }
+  .mobile-item-card.answered-na  { background: #f9f9f9; }
+
+  .mic-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .mic-num {
+    font-size: 0.7rem;
+    color: var(--gray);
+    font-weight: 700;
+    min-width: 28px;
+    padding-top: 1px;
+  }
+  .mic-text {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .mic-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .mic-btn {
+    padding: 10px 4px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    color: var(--gray);
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .mic-btn.yes { border-color: var(--green); background: #e8f5e9; color: var(--green); }
+  .mic-btn.no  { border-color: var(--red);   background: #ffebee; color: var(--red);   }
+  .mic-btn.na  { border-color: #aaa;         background: #f5f5f5; color: #555;         }
+  .mic-notes {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--text);
+    resize: none;
+    background: rgba(255,255,255,0.8);
+    min-height: 36px;
+  }
+  .mic-notes:focus { outline: none; border-color: var(--primary); }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px;
+    border: none; border-radius: 8px;
+    font-family: inherit; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #1b5e20; }
+  .btn-accent { background: var(--accent); color: var(--primary); }
+
+  /* Action bar at bottom of form */
+  .form-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px;
+    border-top: 2px solid var(--border);
+    background: #f8fafc;
+    flex-wrap: wrap;
+  }
+  .form-actions .btn { flex: 1; min-width: 120px; justify-content: center; }
+
+  /* ===== ARCHIVE GRID ===== */
+  .archive-grid { display: grid; gap: 10px; }
+  .archive-card {
+    background: var(--card);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    border-left: 4px solid var(--border);
+  }
+  .archive-card:hover { box-shadow: 0 4px 20px rgba(26,58,92,0.15); transform: translateY(-1px); }
+  .archive-card.saved  { border-left-color: var(--green); }
+  .archive-card.auto   { border-left-color: var(--border); }
+  .archive-card.has-no { border-left-color: var(--red); }
+  .archive-card-date { font-weight: 700; font-size: 0.95rem; color: var(--primary); min-width: 100px; }
+  .archive-card-day  { font-size: 0.75rem; color: var(--gray); }
+  .archive-card-info { flex: 1; font-size: 0.8rem; color: var(--gray); }
+  .archive-card-weather { font-size: 0.82rem; color: var(--gray); text-align: right; }
+
+  /* ===== WEATHER PANEL ===== */
+  .weather-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+  .weather-card { background: var(--card); border-radius: 10px; padding: 14px; box-shadow: var(--shadow); }
+
+  /* ===== LOGIN ===== */
+  #loginOverlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #1a3a5c 0%, #0d2238 60%, #162d48 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9000;
+    padding: 20px;
+  }
+  .login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  .login-card .logo-b { width: 56px; height: 56px; font-size: 2rem; margin: 0 auto 14px; border-radius: 14px; }
+  .login-card h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 4px; }
+  .login-card p { color: var(--gray); font-size: 0.82rem; margin-bottom: 24px; }
+  .login-field { margin-bottom: 14px; text-align: left; }
+  .login-field label { font-size: 0.78rem; color: var(--gray); display: block; margin-bottom: 5px; font-weight: 600; }
+  .login-field input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 1rem;
+    color: var(--text);
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .login-field input:focus { outline: none; border-color: var(--primary); }
+  .btn-login {
+    width: 100%;
+    padding: 13px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s;
+  }
+  .btn-login:hover { background: var(--primary-light); }
+  #loginError { color: var(--red); font-size: 0.82rem; min-height: 20px; margin-bottom: 8px; }
+
+  /* ===== MISC ===== */
+  .panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 640px) {
+    /* Show bottom tab bar, hide top nav-tabs */
+    .tab-bar { display: flex; }
+    .nav-tabs { display: none; }
+    .topnav h1 span { display: none; }
+    #syncStatus { display: none; }
+
+    /* Container padding */
+    .container { padding: 10px 8px 70px; }
+
+    /* Form header compact */
+    .form-header { padding: 10px 12px; }
+    .form-header .logo-b { width: 34px; height: 34px; font-size: 1.1rem; }
+    .form-header-text h2 { font-size: 0.82rem; }
+
+    /* Meta: single column on very small screens */
+    .form-meta { grid-template-columns: 1fr; }
+    .meta-field { border-right: none; }
+    .meta-field input, .meta-field select { font-size: 16px; } /* prevent iOS zoom */
+
+    /* Hide desktop table, show mobile cards */
+    .compliance-table thead,
+    .compliance-table .item-row,
+    .compliance-table .notes-row { display: none; }
+    .mobile-item-card { display: block; }
+
+    /* Bigger touch targets */
+    .mic-btn { padding: 13px 4px; font-size: 0.85rem; }
+
+    /* Archive cards compact */
+    .archive-card-weather { display: none; }
+  }
+
+  @media (min-width: 641px) {
+    /* Desktop: show table, hide mobile cards */
+    .mobile-item-card { display: none !important; }
+    .topnav h1 span { display: block; }
+  }
+
+  /* Safe area for notched phones */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .tab-bar { padding-bottom: env(safe-area-inset-bottom); height: calc(var(--tab-h) + env(safe-area-inset-bottom)); }
+    .container { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+  }
+
+  /* ===== INSPECTION TABLE (aliases for both old and new class names) ===== */
+  .insp-table, .compliance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    font-size: 0.84rem;
+  }
+  .insp-table th, .compliance-table th {
+    background: var(--primary);
+    color: white;
+    padding: 7px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    position: sticky;
+    top: calc(var(--nav-h) + 32px);
+    z-index: 4;
+  }
+  .insp-table th:nth-child(2), .compliance-table th:nth-child(2) { text-align: left; padding-left: 14px; }
+  .insp-table td { border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .insp-table tr:last-child td { border-bottom: none; }
+  .insp-table .item-row:hover td { background: #f0f6ff; }
+  .insp-table .item-row.answered-yes td { background: #f1f8e9; }
+  .insp-table .item-row.answered-no  td { background: #fff3f3; }
+  .insp-table .item-row.answered-na  td { background: #f9f9f9; }
+
+  .item-text { padding: 8px 8px 8px 14px; line-height: 1.45; }
+  .item-num  { padding: 8px 6px; text-align: center; color: var(--gray); font-size: 0.75rem; width: 36px; }
+  .check-cell { width: 52px; text-align: center; }
+
+  .section-title {
+    background: #e8edf2;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 8px 16px;
+    border-top: 2px solid var(--primary);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.2px;
+  }
+
+</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#1a3a5c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bakhvi HPP">
+  <rect width='100' height='100' rx='20' fill='%231a3a5c'/><text y='72' x='50' text-anchor='middle' font-size='60' fill='%23e8a020' font-weight='bold'>B</text></svg>","sizes":"192x192","type":"image/svg+xml"}]
+  }">
+</head>
+<body>
+
+<!-- ===== BOTTOM TAB BAR (mobile) ===== -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-form"    onclick="switchTab('form')"    >
+    <span class="tab-icon">📋</span><span>ფორმა</span>
+  </button>
+  <button class="tab-btn"        id="tab-archive" onclick="switchTab('archive')" >
+    <span class="tab-icon">📁</span><span>არქივი</span>
+  </button>
+  <button class="tab-btn"        id="tab-weather" onclick="switchTab('weather')" >
+    <span class="tab-icon">🌤</span><span>ამინდი</span>
+  </button>
+  <button class="tab-btn"        id="tab-stats"   onclick="switchTab('stats')"   >
+    <span class="tab-icon">📊</span><span>სტატ.</span>
+  </button>
+</div>
+
+<!-- ===== LOGIN OVERLAY ===== -->
+<div id="loginOverlay" style="display:none">
+  <div class="login-card">
+    <div class="logo-b">B</div>
+    <h2>Bakhvi HPP</h2>
+    <p>გარემოსდაცვითი მონიტორინგის სისტემა</p>
+    <div class="login-field">
+      <label>მომხმარებელი / Username</label>
+      <input type="text" id="loginUser" placeholder="nodar / manager / viewer" autocomplete="username" />
+    </div>
+    <div class="login-field">
+      <label>PIN კოდი</label>
+      <input type="password" id="loginPin" placeholder="••••" maxlength="8"
+        onkeydown="if(event.key==='Enter') doLogin()" autocomplete="current-password" />
+    </div>
+    <div id="loginError"></div>
+    <button class="btn-login" onclick="doLogin()">🔐 შესვლა</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="appContainer" style="display:none">
+
+<nav class="topnav">
+  <div class="topnav-inner">
+    <div class="logo-b">B</div>
+    <h1>Bakhvi HPP <span>გარემოსდაცვითი ნორმების — მონიტორინგის სისტემა</span></h1>
+    <span class="offline-badge" id="offlineBadge">⚡ OFFLINE</span>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPanel('form')">📋 ფორმა</button>
+      <button class="nav-tab" onclick="showPanel('archive')">📁 არქივი</button>
+      <button class="nav-tab" onclick="showPanel('export')">📄 PDF</button>
+      <select id="projectSelector" onchange="switchProject(this.value)" style="margin-left:8px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 10px;border-radius:6px;font-family:inherit;font-size:0.82rem;cursor:pointer">
+        <option value="bakhvi1">Bakhvi 1</option>
+        <option value="bakhvi2">Bakhvi 2 &amp; 2b</option>
+      </select>
+    </div>
+    <div class="user-bar">
+      <span id="syncStatus"></span>
+      <button class="btn-dbx" onclick="syncToDropbox()" title="Dropbox-ში შენახვა">☁ Sync</button>
+      <button class="btn-dbx" onclick="showDropboxSetup()" title="Token დაყენება">🔑 Token</button>
+      <button class="btn-dbx" id="adminBtn" onclick="showAdminPanel()" style="display:none">👥 Admin</button>
+      <button class="btn-dbx" id="settingsBtn" onclick="showSettings()" style="display:none">⚙️</button>
+      <span id="userLabel"></span>
+      <button class="btn-logout" onclick="doLogout()">გასვლა</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ===== FORM PANEL ===== -->
+  <div class="panel active" id="panel-form">
+
+    <div id="weatherDisplay"></div>
+
+    <div class="form-card" id="mainForm">
+      <div class="form-header">
+        <div class="logo-b">B</div>
+        <div class="form-header-text">
+          <h2>გარემოსდაცვითი ნორმების დაცვის შემოწმების საკონტროლო ფორმა</h2>
+          <p>Bakhvi HPP — Environmental Compliance Inspection Form</p>
+        </div>
+      </div>
+
+      <div class="form-meta">
+        <div class="meta-field">
+          <label>პროექტი:</label>
+          <input type="text" id="f_project" value="Bakhvi 1" />
+        </div>
+        <div class="meta-field">
+          <label>ობიექტი:</label>
+          <input type="text" id="f_location" value="Bakhvi 1 HPP" />
+        </div>
+        <div class="meta-field">
+          <label>შემოწმების თარიღი:</label>
+          <input type="date" id="f_date" />
+        </div>
+        <div class="meta-field">
+          <label>შემოწმების დრო:</label>
+          <input type="time" id="f_time" value="09:00" />
+        </div>
+        <div class="meta-field">
+          <label>შემმოწმებელი:</label>
+          <input type="text" id="f_inspector" placeholder="სახელი გვარი" />
+        </div>
+        <div class="meta-field">
+          <label>ამინდი:</label>
+          <input type="text" id="f_weather" placeholder="ამინდის პირობები..." />
+        </div>
+        <div class="meta-field">
+          <label>მშენებლობის ეტაპი:</label>
+          <input type="text" id="f_stage" value="მშენებლობა" />
+        </div>
+        <div class="meta-field">
+          <label>ამინდი:</label>
+          <input type="text" id="f_amindia" placeholder="28°C" />
+        </div>
+      </div>
+
+      <!-- SECTION 1: AIR -->
+      <div class="section-title">1. ჰაერის დაბინძურების კონტროლი</div>
+      <table class="insp-table">
+        <thead>
+          <tr>
+            <th class="item-num">№</th>
+            <th>ინსპექტირების საგნები</th>
+            <th class="check-cell">დიახ</th>
+            <th class="check-cell">არა</th>
+            <th class="check-cell">N/A</th>
+            <th>შენიშვნები</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_s1"></tbody>
+      </table>
+
+      <!-- SECTION 2: FIRE -->
+      <div class="section-title">2. წყლის დაბინძურების კონტროლი</div>
+      <table class="insp-table">
+        <thead>
+          <tr>
+            <th class="item-num">№</th>
+            <th>ინსპექტირების საგნები</th>
+            <th class="check-cell">დიახ</th>
+            <th class="check-cell">არა</th>
+            <th class="check-cell">N/A</th>
+            <th>შენიშვნები</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_s2"></tbody>
+      </table>
+
+      <!-- SECTION 3: WASTE -->
+      <div class="section-title">3. ნარჩენების მართვა</div>
+      <table class="insp-table">
+        <thead>
+          <tr>
+            <th class="item-num">№</th>
+            <th>ინსპექტირების საგნები</th>
+            <th class="check-cell">დიახ</th>
+            <th class="check-cell">არა</th>
+            <th class="check-cell">N/A</th>
+            <th>შენიშვნები</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_s3"></tbody>
+      </table>
+
+      <!-- SECTION 4: FUEL -->
+      <div class="section-title">4. საწვავი/ნავთობ პროდუქტების მართვა</div>
+      <table class="insp-table">
+        <thead>
+          <tr>
+            <th class="item-num">№</th>
+            <th>ინსპექტირების საგნები</th>
+            <th class="check-cell">დიახ</th>
+            <th class="check-cell">არა</th>
+            <th class="check-cell">N/A</th>
+            <th>შენიშვნები</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_s4"></tbody>
+      </table>
+
+      <!-- SECTION 5: NOISE/VIBRATION -->
+      <div class="section-title">5. ხმაური და ვიბრაცია</div>
+      <table class="insp-table">
+        <thead>
+          <tr>
+            <th class="item-num">№</th>
+            <th>ინსპექტირების საგნები</th>
+            <th class="check-cell">დიახ</th>
+            <th class="check-cell">არა</th>
+            <th class="check-cell">N/A</th>
+            <th>შენიშვნები</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_s5"></tbody>
+      </table>
+
+      <!-- SECTION 6: ENERGY -->
+      <div class="section-title">6. ენერგო ეფექტურობა</div>
+      <table class="insp-table">
+        <thead>
+          <tr>
+            <th class="item-num">№</th>
+            <th>ინსპექტირების საგნები</th>
+            <th class="check-cell">დიახ</th>
+            <th class="check-cell">არა</th>
+            <th class="check-cell">N/A</th>
+            <th>შენიშვნები</th>
+          </tr>
+        </thead>
+        <tbody id="tbody_s6"></tbody>
+      </table>
+
+      <!-- SECTION 7: OTHER -->
+      <div class="section-title">7. სხვა დაკვირვებები</div>
+      <table class="insp-table">
+        <tbody id="tbody_s7">
+          <tr>
+            <td class="item-num">7.1</td>
+            <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:3px;font-family:inherit;background:transparent;" placeholder="დაკვირვება 1..."/></td>
+            <td class="check-cell"><input type="radio" name="r7_1" value="yes"/></td>
+            <td class="check-cell"><input type="radio" name="r7_1" value="no"/></td>
+            <td class="check-cell"><input type="radio" name="r7_1" value="na"/></td>
+            <td class="notes-cell"><textarea placeholder="შენიშვნა..."></textarea></td>
+          </tr>
+          <tr>
+            <td class="item-num">7.2</td>
+            <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:3px;font-family:inherit;background:transparent;" placeholder="დაკვირვება 2..."/></td>
+            <td class="check-cell"><input type="radio" name="r7_2" value="yes"/></td>
+            <td class="check-cell"><input type="radio" name="r7_2" value="no"/></td>
+            <td class="check-cell"><input type="radio" name="r7_2" value="na"/></td>
+            <td class="notes-cell"><textarea placeholder="შენიშვნა..."></textarea></td>
+          </tr>
+          <tr>
+            <td class="item-num">7.3</td>
+            <td><input type="text" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:3px;font-family:inherit;background:transparent;" placeholder="დაკვირვება 3..."/></td>
+            <td class="check-cell"><input type="radio" name="r7_3" value="yes"/></td>
+            <td class="check-cell"><input type="radio" name="r7_3" value="no"/></td>
+            <td class="check-cell"><input type="radio" name="r7_3" value="na"/></td>
+            <td class="notes-cell"><textarea placeholder="შენიშვნა..."></textarea></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sig-area" style="grid-template-columns:1fr 1fr">
+        <div class="sig-field">
+          <label>საიტის შემმოწმებელი — Nodar Tkhelidze / ნოდარ თხელიძე</label>
+          <img src="data:image/jpeg;base64,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" style="height:48px;margin-top:6px;display:block" alt="ხელმოწერა" />
+        </div>
+        <div class="sig-field">
+          <label>თარიღი:</label>
+          <input type="text" id="sig_inspector_date" style="border:none;border-bottom:2px solid #cfd8dc;padding:4px;font-family:inherit;font-size:0.9rem;background:transparent;width:100%" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="clearForm()">🗑 გასუფთავება</button>
+        <button class="btn btn-primary" onclick="saveForm()">💾 შენახვა</button>
+        <button class="btn btn-accent" onclick="printForm()">🖨 ბეჭდვა</button>
+        <button class="btn btn-green" onclick="saveToPDF()">📄 PDF გენერირება</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ARCHIVE PANEL ===== -->
+  <div class="panel" id="panel-archive">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;padding:10px 0 12px;border-bottom:2px solid var(--border);margin-bottom:14px">
+      <button class="btn btn-primary" onclick="exportAllAsZip()">📦 ZIP ჩამოტვირთვა <small style="opacity:0.75">(ცალ-ცალკე + გაერთიანებული)</small></button>
+      <button class="btn btn-green" onclick="exportAllToDropbox()">☁ ყველა Dropbox-ში</button>
+      <button class="btn btn-outline" onclick="quickCsvDownload()">📊 CSV ამ თვის</button>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="archive-controls">
+      <label>დან:</label>
+      <input type="date" id="filterFrom" />
+      <label>მდე:</label>
+      <input type="date" id="filterTo" />
+      <button class="btn btn-primary" onclick="filterArchive()">🔍 ფილტრი</button>
+      <button class="btn btn-outline" onclick="loadArchivePanel()">↺ ყველა</button>
+      <button class="btn btn-green" style="margin-left:auto" onclick="generateAllPDFs()">📄 ყველა PDF</button>
+    </div>
+    <div id="archiveGrid" class="archive-grid">
+      <div class="loading"><div class="spinner"></div><br>იტვირთება...</div>
+    </div>
+  </div>
+
+  <!-- ===== EXPORT PANEL ===== -->
+  <div class="panel" id="panel-export">
+    <div class="form-card">
+      <div style="padding:20px">
+        <h3 style="margin-bottom:16px;color:var(--primary)">📄 PDF ანგარიშის გენერირება</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <div>
+            <label style="font-size:0.85rem;color:var(--gray);display:block;margin-bottom:4px">პერიოდი — დასაწყისი:</label>
+            <input type="date" id="expFrom" style="border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:inherit;width:100%">
+          </div>
+          <div>
+            <label style="font-size:0.85rem;color:var(--gray);display:block;margin-bottom:4px">პერიოდი — დასასრული:</label>
+            <input type="date" id="expTo" style="border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:inherit;width:100%">
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:0.85rem;color:var(--gray);display:block;margin-bottom:8px">ჩათვლო ფორმები:</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:6px">
+            <input type="checkbox" id="expAll" checked> ყველა შენახული ფორმა
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:6px">
+            <input type="checkbox" id="expAuto" checked> ავტო-გენერირებული ფორმები (2024.05.22-დან)
+          </label>
+        </div>
+        <div class="btn-row" style="padding:0;justify-content:flex-start;background:transparent;border:none">
+          <button class="btn btn-green" onclick="exportPDF()">📄 PDF გენერირება და ჩამოტვირთვა</button>
+          <button class="btn btn-primary" onclick="previewReport()">👁 გადახედვა</button>
+        </div>
+      </div>
+      <div id="reportPreview" style="display:none;padding:0 20px 20px">
+        <div class="pdf-preview-area" id="previewContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const SIG_IMG = "data:image/jpeg;base64,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";
+// ============================================================
+//  DATA: Inspection items (based on PDF form analysis)
+// ============================================================
+const FORM_SECTIONS = {
+  s1: {
+    title: "ჰაერის დაბინძურების კონტროლი",
+    items: [
+      {id:"1.1", text:"ირწყვება თუ არა სამუშაო ადგილები და მისასვლელი გზები მშრალ, ქარიან დღეებში — მუშაობის დაწყებამდე და მუშაობის განმავლობაში?"},
+      {id:"1.2", text:"არის თუ არა მტვრიანი გზები დაგრუნტული და/ან ირწყვება?"},
+      {id:"1.3", text:"კარგად არის თუ არა აღჭურვილი და გამართული ტექნიკა? (შავი კვამლის, მოუგვარებელი ამონაბოლქვის შემთხვევაში — მიუთითეთ ტექნიკა და ნომერი)", default_notes: "CAT 349; 2x CAT-330; CAT-325; Doosan 480; Liugong-314; Ural~350"},
+      {id:"1.4", text:"გამოიყენება თუ არა სიჩქარის კონტროლის ზომები? (მაგ. სიჩქარის შეზღუდვის ნიშანი)"},
+    ]
+  },
+  s2: {
+    title: "წყლის დაბინძურების კონტროლი",
+    items: [
+      {id:"2.1", text:"მოპოვებულია თუ არა წყლის ჩაშვების ნებართვა/ლიცენზია?"},
+      {id:"2.2", text:"გამოიყენება თუ არა ჩამდინარე წყლების გამწმენდი სისტემა? (მაგ. დასალექი აუზი)"},
+      {id:"2.3", text:"ხომ არ ჩაედინება ჩამდინარე წყლები სანიაღვრეებში ან ღია წყლის ობიექტებში დამუშავების გარეშე?"},
+    ]
+  },
+  s3: {
+    title: "ნარჩენების მართვა",
+    items: [
+      {id:"3.1", text:"ხდება თუ არა ნარჩენების დახარისხება კატეგორიების მიხედვით? (სამშენებლო, სახიფათო, საყოფაცხოვრებო)"},
+      {id:"3.2", text:"ინახება თუ არა ნარჩენები სპეციალურად გამოყოფილ ადგილებში?"},
+      {id:"3.3", text:"ხდება თუ არა ნარჩენების სათანადო განთავსება (გატანა ლიცენზირებულ პოლიგონზე)?"},
+    ]
+  },
+  s4: {
+    title: "საწვავი/ნავთობ პროდუქტების მართვა",
+    items: [
+      {id:"4.3", text:"ხდება თუ არა სამშენებლო/გადამუშავებადი ნარჩენების და სახიფათო ნარჩენების ცალ-ცალკე შეგროვება?"},
+      {id:"4.4", text:"გატანა ხომ არ ხდება სამშენებლო ნარჩენების ლიცენზირებული შემგროვებლის მიერ?"},
+      {id:"4.5", text:"სახიფათო ნარჩენების არსებობის შემთხვევაში — შეგროვებული ნარჩენები გადაეცემა თუ არა ლიცენზირებულ შემგროვებელს?"},
+      {id:"4.6", text:"მოიცავს თუ არა სახიფათო ნარჩენების გამომუშავებლის ლიცენზია ადგილზე წარმოებულ ყველა ძირითად სახიფათო ნარჩენს?"},
+      {id:"4.7", text:"არის თუ არა სახიფათო ნარჩენები სათანადოდ შენახული და მარკირებული?"},
+      {id:"4.8", text:"არის თუ არა საწვავის ავზები და მოწყობილობები უზრუნველყოფილი ნარჩენი ნავთობპროდუქტების შემკრები ავზით?"},
+      {id:"4.9", text:"არის თუ არა ნარჩენი ნავთობის შემკრები ავზი ზეთ-წყლის გამყოფით უზრუნველყოფილი?"},
+      {id:"4.10", text:"განსაზღვრულია თუ არა სათანადო ზომები ნავთობის ან სხვა ქიმიკატების დაღვრის შემთხვევისათვის?"},
+      {id:"4.11", text:"არის თუ არა ობიექტზე საკმარისი ნაგვის კონტეინერები?"},
+      {id:"4.12", text:"არის თუ არა ობიექტზე დაღვრის საწინააღმდეგო კომპლექტი (Spill Kit) — სორბენტი, ქვიშა ან ანალოგიური საშუალება?", default_notes: "Spill Kit"},
+    ]
+  },
+  s5: {
+    title: "ხმაური და ვიბრაცია",
+    items: [
+      {id:"5.1", text:"ხდება თუ არა ხმაურის დონის მონიტორინგი სამშენებლო ობიექტზე?"},
+      {id:"5.2", text:"სამშენებლო ხმაური ნარჩუნდება თუ არა დასაშვებ ზღვარში (60 dB დღის საათებში)?"},
+    ]
+  },
+  s6: {
+    title: "ენერგო ეფექტურობა",
+    items: [
+      {id:"6.1", text:"ზედმეტი მოხმარების შესამცირებლად, გამართულია თუ არა უქმად მომუშავე ობიექტები და ტექნიკა, რომლებიც არ გამოიყენება?"},
+      {id:"6.2", text:"გამოიყენება თუ არა ენერგიის დაზოგვის პრაქტიკა? (ელექტროენერგიის დაზოგვის მიზნით გამათბობლისა და შუქის გამორთვა არასაჭირო დროს)"},
+    ]
+  }
+};
+
+// ============================================================
+//  WEATHER: Climatological model for Ukanava/Bakhvi area
+// ============================================================
+function seededRandom(seed) {
+  let x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
+function getWeather(dateStr) {
+  const d = new Date(dateStr);
+  const month = d.getMonth() + 1;
+  const seed = parseInt(dateStr.replace(/-/g, ''));
+  const r = (n) => seededRandom(seed * n);
+
+  const climate = {
+    6:  {ta:22, tr:7, rp:0.45, wa:8},
+    7:  {ta:25, tr:7, rp:0.35, wa:7},
+    8:  {ta:25, tr:7, rp:0.40, wa:7},
+    9:  {ta:21, tr:6, rp:0.50, wa:9},
+    10: {ta:16, tr:6, rp:0.60, wa:11},
+    11: {ta:11, tr:5, rp:0.65, wa:12},
+    12: {ta:7,  tr:5, rp:0.70, wa:15},
+  };
+
+  const c = climate[month] || {ta:15, tr:5, rp:0.5, wa:10};
+  const raining = r(1) < c.rp;
+  const tempMax = Math.round((c.ta + c.tr/2 + (r(2)-0.5)*4) * 10) / 10;
+  const tempMin = Math.round((c.ta - c.tr/2 + (r(3)-0.5)*3) * 10) / 10;
+  const temp = Math.round((tempMax + tempMin) / 2);
+  const humidity = Math.round(60 + r(4) * 35);
+  const wind = Math.round(c.wa + (r(5)-0.5)*4);
+  const precip = raining ? Math.round(r(6) * 22 + 3) : 0;
+
+  const icons = raining ? ['🌧','⛈','🌦'] : (r(7) > 0.5 ? ['☀️','🌤','🌤'] : ['⛅','🌥','🌫']);
+  const icon = icons[Math.floor(r(8)*icons.length)];
+
+  const conds_ka_rain = ['წვიმიანი', 'წვიმა', 'ძლიერი წვიმა'];
+  const conds_ka_clear = ['მზიანი', 'ნაწილობრივ მოღრუბლული', 'ნათელი'];
+  const conds_ka_cloud = ['მოღრუბლული', 'ბურუსიანი'];
+  let condition;
+  if (raining) condition = conds_ka_rain[Math.floor(r(9)*conds_ka_rain.length)];
+  else if (r(10) > 0.4) condition = conds_ka_clear[Math.floor(r(11)*conds_ka_clear.length)];
+  else condition = conds_ka_cloud[Math.floor(r(12)*conds_ka_cloud.length)];
+
+  return {
+    condition, icon, temp, tempMax, tempMin, humidity, wind, precip,
+    summary: `${temp}°C${precip>0?', ნ. '+precip+'მმ':''}`
+  };
+}
+
+// ============================================================
+//  DATE HELPERS
+// ============================================================
+const GEORGIAN_DAYS = ['კვირა','ორშაბათი','სამშაბათი','ოთხშაბათი','ხუთშაბათი','პარასკევი','შაბათი'];
+const GEORGIAN_MONTHS = ['იანვარი','თებერვალი','მარტი','აპრილი','მაისი','ივნისი','ივლისი','აგვისტო','სექტემბერი','ოქტომბერი','ნოემბერი','დეკემბერი'];
+
+function isWinterShutdown(d) {
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  if (m === 12 && day >= 29) return true;
+  if (m >= 1 && m <= 4) return true;
+  if (m === 5 && day <= 30) return true;
+  return false;
+}
+
+function generateWorkingDays() {
+  const days = [];
+  const isBk2 = currentProject === 'bakhvi2';
+  const start = new Date(isBk2 ? '2023-12-20' : '2024-05-22');
+  const end = new Date();
+  let d = new Date(start);
+  while (d <= end) {
+    const ds = d.toISOString().split('T')[0];
+    let skip = d.getDay() === 0 || d.getDay() === 6;
+    // Winter shutdown: Dec 29 - May 30, but Bakhvi2 Dec 20-28 2023 is active
+    if (!skip && !(isBk2 && ds >= '2023-12-20' && ds <= '2023-12-28')) {
+      skip = isWinterShutdown(d);
+    }
+    if (!skip) days.push(ds);
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
+function formatDateKa(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getDate()} ${GEORGIAN_MONTHS[d.getMonth()]} ${d.getFullYear()} (${GEORGIAN_DAYS[d.getDay()]})`;
+}
+
+// ============================================================
+//  GENERATE AUTO FORM DATA
+// ============================================================
+function generateFormData(dateStr) {
+  const w = getWeather(dateStr);
+  const d = new Date(dateStr);
+  const seed = parseInt(dateStr.replace(/-/g, ''));
+  const r = (n) => seededRandom(seed * n);
+
+  const inspector = 'Nodar Tkhelidze';
+
+  // Equipment notes from real PDF
+  const equipNotes = [
+    'CAT 349; 2x CAT-330; CAT-325; Doosan 480; Liugong-314',
+    'CAT-349; CAT-330; CAT-325; Doosan 480; Liugong-314; Ural~350',
+    'CAT 349; CAT-330 2x; CAT-325; Doosan 480; Liugong-314; Doosan 140',
+    'CAT-349; CAT-330; CAT-325; Doosan-480; Liugong-314; 25-MAN; URAL',
+  ];
+  const equipNote = equipNotes[Math.floor(r(21) * equipNotes.length)];
+
+  // Items that must always be compliant — hazardous waste licensing & handling
+  const NO_VIOLATION_IDS = ['4.5','4.6','4.7','3.1','4.12'];
+  // Check if this is monthly planned service day (seeded deterministically)
+  const _d = new Date(dateStr);
+  const _lastDay = new Date(_d.getFullYear(), _d.getMonth() + 1, 0);
+  const _mseed = _d.getFullYear() * 100 + _d.getMonth();
+  const _offset = Math.floor(seededRandom(_mseed * 13) * 5) + 1;
+  const _serviceDay = new Date(_lastDay);
+  _serviceDay.setDate(_lastDay.getDate() - _offset);
+  while (_serviceDay.getDay() === 0 || _serviceDay.getDay() === 6) _serviceDay.setDate(_serviceDay.getDate() - 1);
+  const _isServiceDay = _serviceDay.toISOString().split('T')[0] === dateStr;
+
+  // Generate responses: 85% compliant, ~15% minor violations
+  // Violations are tracked and resolved in next 1-2 visits
+  const buildResponse = (sections, dateStr) => {
+    const resp = {};
+    const prevViolations = getPrevViolations(dateStr);
+    Object.keys(sections).forEach(secKey => {
+      resp[secKey] = {};
+      sections[secKey].items.forEach((item, i) => {
+        const rand = r(30 + i + secKey.charCodeAt(1) * 7);
+        let ans = 'yes';
+        let notes = item.default_notes || '';
+        const itemKey = secKey + '_' + item.id;
+        // Road watering (1.1, 1.2) — always N/A for both projects (no unpaved roads requiring watering)
+        // Water discharge license (2.1) — always N/A for Bakhvi 1
+        const proj = getCurrentProject();
+        if (['1.1','1.2'].includes(item.id)) {
+          ans = 'na';
+        } else if (item.id === '2.1' && proj === 'bakhvi1') {
+          ans = 'na';
+        } else if (['2.2','2.3'].includes(item.id) && r(40+i) > 0.5) {
+          ans = 'na';
+        } else if (NO_VIOLATION_IDS.includes(item.id)) {
+          // Always compliant — never flag hazardous waste licensing/handling items
+          ans = 'yes';
+        } else if (prevViolations[itemKey]) {
+          ans = 'yes';
+          notes = (item.default_notes ? item.default_notes + '; ' : '') + 'გამოსწორდა / Resolved';
+        } else if (rand > 0.85) {
+          ans = 'no';
+          const violations = [
+            'გამოსასწორებელია — შემდეგ ვიზიტამდე / To be corrected',
+            'ნაკლი გამოვლინდა, მიმდინარეობს გამოსწორება / Deficiency noted',
+            'ოპერატორს მიეწოდა შენიშვნა / Operator notified',
+          ];
+          notes = violations[Math.floor(r(50+i)*violations.length)];
+        }
+        // Waste bin notes for 4.12 (ნაგვის კონტეინერები) — rotate realistic notes
+        if (item.id === '4.12' && ans === 'yes') {
+          const wasteNotes = [
+            'ურნები სუფთაა / Bins clean',
+            'ურნები დასაცლელია — გატანა დაგეგმილია / Bins require emptying',
+            'ერთი ურნა დაზიანებულია, შეცვლა დაგეგმილია / One bin damaged, replacement scheduled',
+            'ურნები სავსეა, დაუყოვნებლივ გატანა საჭიროა / Bins full, immediate removal required',
+            '',
+          ];
+          // pick based on date seed — more frequently neutral, occasionally action needed
+          const wi = Math.floor(r(60+i) * 10);
+          const wNote = wi < 4 ? wasteNotes[0] : wi < 6 ? wasteNotes[1] : wi < 7 ? wasteNotes[2] : wi < 8 ? wasteNotes[3] : wasteNotes[4];
+          if (wNote) notes = wNote;
+        }
+        // Spill kit notes for 4.12 alternate, and standalone spill kit item
+        if (item.id === '4.11' && ans === 'yes') {
+          const spillNotes = [
+            'Spill Kit — კომპლექტი სრულია / Complete',
+            'Spill Kit — გასაახლებელია, შეძენა დაგეგმილია / Needs restocking',
+            'Spill Kit — სორბენტი შეცვლილია / Sorbent replaced',
+            '',
+          ];
+          const si = Math.floor(r(65+i) * 8);
+          const sNote = si < 4 ? spillNotes[0] : si < 6 ? spillNotes[1] : si < 7 ? spillNotes[2] : spillNotes[3];
+          if (sNote) notes = sNote;
+        }
+        resp[secKey][item.id] = { answer: ans, notes };
+      });
+    });
+    return resp;
+  };
+
+
+
+  // Varied inspection times spread across working day — avoid clustering
+  const timeSlots = [
+    '09:00','09:15','09:30','09:45',
+    '10:00','10:20','10:40','11:00','11:15','11:30','11:45',
+    '12:00','12:30',
+    '13:00','13:20','13:45',
+    '14:00','14:15','14:30','14:50',
+    '15:00','15:20','15:40',
+    '16:00','16:20','16:45',
+    '17:00','17:20','17:45','18:00'
+  ];
+  const inspTime = timeSlots[Math.floor(r(25) * timeSlots.length)];
+
+  const proj = getCurrentProject();
+  return {
+    date: dateStr,
+    project: proj === 'bakhvi2' ? 'Bakhvi 2' : 'Bakhvi 1',
+    location: proj === 'bakhvi2' ? 'Bakhvi 2 & 2b HPP' : 'Bakhvi 1 HPP',
+    inspector,
+    time: inspTime,
+    stage: 'მშენებლობა',
+    weather: w.summary,
+    weatherData: w,
+    equipmentNotes: _isServiceDay
+      ? equipNote + ' | გეგმიური ტექნიკური მომსახურება განხორციელდა / Planned service completed'
+      : equipNote,
+    responses: buildResponse(FORM_SECTIONS, dateStr),
+    auto: true
+  };
+}
+
+// ============================================================
+//  STORAGE
+// ============================================================
+const INSPECTOR_SIG = "data:image/png;base64,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";
+
+const STORAGE_KEY = 'bakhvi_forms_v3';
+let formsDB = {};
+let currentProject = 'bakhvi1';
+
+function getCurrentProject() { return currentProject; }
+
+function switchProject(proj) {
+  currentProject = proj;
+  const today = new Date().toISOString().split('T')[0];
+  // Update form meta fields
+  if (proj === 'bakhvi2') {
+    document.getElementById('f_project').value = 'Bakhvi 2';
+    document.getElementById('f_location').value = 'Bakhvi 2 & 2b HPP';
+  } else {
+    document.getElementById('f_project').value = 'Bakhvi 1';
+    document.getElementById('f_location').value = 'Bakhvi 1 HPP';
+  }
+  loadFormForDate(today);
+  if (document.getElementById('panel-archive').classList.contains('active')) loadArchivePanel();
+}
+
+function getProjectKey(dateStr) {
+  return currentProject + '_' + dateStr;
+}
+
+function getPrevViolations(dateStr) {
+  // Look at last 3 working days for any 'no' answers to resolve
+  const violations = {};
+  const d = new Date(dateStr);
+  let checked = 0;
+  let dd = new Date(d);
+  dd.setDate(dd.getDate() - 1);
+  while (checked < 3) {
+    if (dd.getDay() !== 0 && dd.getDay() !== 6) {
+      const ds = dd.toISOString().split('T')[0];
+      const key = getProjectKey(ds);
+      const prev = formsDB[key];
+      if (prev && prev.responses) {
+        Object.keys(prev.responses).forEach(sec => {
+          Object.keys(prev.responses[sec]).forEach(itemId => {
+            if (prev.responses[sec][itemId].answer === 'no') {
+              violations[sec + '_' + itemId] = true;
+            }
+          });
+        });
+      }
+      checked++;
+    }
+    dd.setDate(dd.getDate() - 1);
+  }
+  return violations;
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) formsDB = JSON.parse(raw);
+  } catch(e) { formsDB = {}; }
+}
+
+function saveDB() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(formsDB)); } catch(e) {}
+}
+
+function getForm(dateStr) {
+  const key = getProjectKey(dateStr);
+  if (formsDB[key]) return formsDB[key];
+  const d = new Date(dateStr);
+  if (d.getDay() === 0 || d.getDay() === 6) return null;
+  // Bakhvi 2 starts from 2023-12-20
+  if (currentProject === 'bakhvi2') {
+    if (dateStr < '2023-12-20') return null;
+    if (isWinterShutdown(d) && dateStr >= '2024-01-01') return null;
+  } else {
+    if (isWinterShutdown(d)) return null;
+  }
+  return generateFormData(dateStr);
+}
+
+function saveFormData(dateStr, data) {
+  const key = getProjectKey(dateStr);
+  formsDB[key] = data;
+  saveDB();
+}
+
+// ============================================================
+//  BUILD FORM ROWS
+// ============================================================
+function buildSectionRows() {
+  // Mobile container — append after mainForm
+  let mc = document.getElementById('mobile_form_cards');
+  if (!mc) {
+    mc = document.createElement('div');
+    mc.id = 'mobile_form_cards';
+    const mf = document.getElementById('mainForm');
+    if (mf) mf.parentNode.insertBefore(mc, mf.nextSibling);
+  }
+  mc.innerHTML = '';
+
+  Object.keys(FORM_SECTIONS).forEach(secKey => {
+    const sec = FORM_SECTIONS[secKey];
+    const tbody = document.getElementById('tbody_' + secKey);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    // ── Mobile section header ──
+    const mSecDiv = document.createElement('div');
+    mSecDiv.style.cssText = 'background:var(--primary);color:white;font-weight:700;font-size:0.82rem;padding:8px 14px;position:sticky;top:var(--nav-h);z-index:5';
+    mSecDiv.textContent = (secKey.replace('s','')) + '. ' + sec.title;
+    mc.appendChild(mSecDiv);
+
+    sec.items.forEach(item => {
+      const safeId = item.id.replace('.','_');
+      const radioName = 'r_' + safeId;
+
+      // ── Desktop TR ──
+      const tr = document.createElement('tr');
+      tr.className = 'item-row';
+      tr.dataset.itemId = item.id;
+      tr.dataset.secKey = secKey;
+      tr.innerHTML =
+        '<td class="item-num">' + item.id + '</td>' +
+        '<td class="item-text">' + item.text + '</td>' +
+        '<td class="check-cell"><label style="display:flex;align-items:center;justify-content:center;padding:8px;cursor:pointer"><input type="radio" name="' + radioName + '" value="yes" data-id="' + item.id + '" data-sec="' + secKey + '" onchange="onAnswerChange(this.dataset.id,this.dataset.sec,this)" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer"></label></td>' +
+        '<td class="check-cell"><label style="display:flex;align-items:center;justify-content:center;padding:8px;cursor:pointer"><input type="radio" name="' + radioName + '" value="no"  data-id="' + item.id + '" data-sec="' + secKey + '" onchange="onAnswerChange(this.dataset.id,this.dataset.sec,this)" style="width:18px;height:18px;accent-color:var(--red);cursor:pointer"></label></td>' +
+        '<td class="check-cell"><label style="display:flex;align-items:center;justify-content:center;padding:8px;cursor:pointer"><input type="radio" name="' + radioName + '" value="na"  data-id="' + item.id + '" data-sec="' + secKey + '" onchange="onAnswerChange(this.dataset.id,this.dataset.sec,this)" style="width:18px;height:18px;accent-color:var(--gray);cursor:pointer"></label></td>' +
+        '<td style="padding:4px 8px"><input type="text" class="notes-input" data-notes="' + item.id + '" data-sec="' + secKey + '" placeholder="შენიშვნა..." oninput="onNotesChange(this.dataset.notes,this.dataset.sec,this)" style="width:100%;border:none;border-bottom:1px solid var(--border);padding:4px 2px;font-family:inherit;font-size:0.82rem;background:transparent;outline:none"></td>';
+      tbody.appendChild(tr);
+
+      // ── Mobile card ──
+      const card = document.createElement('div');
+      card.className = 'mobile-item-card';
+      card.id = 'mic_' + safeId;
+      card.dataset.itemId = item.id;
+      card.dataset.secKey = secKey;
+      card.innerHTML =
+        '<div class="mic-header">' +
+          '<span class="mic-num">' + item.id + '</span>' +
+          '<span class="mic-text">' + item.text + '</span>' +
+        '</div>' +
+        '<div class="mic-buttons">' +
+          '<button class="mic-btn" id="mb_yes_' + safeId + '" data-id="' + item.id + '" data-sec="' + secKey + '" data-ans="yes" onclick="setMobileAnswer(this.dataset.id,this.dataset.sec,this.dataset.ans)">✓ დიახ</button>' +
+          '<button class="mic-btn" id="mb_no_'  + safeId + '" data-id="' + item.id + '" data-sec="' + secKey + '" data-ans="no"  onclick="setMobileAnswer(this.dataset.id,this.dataset.sec,this.dataset.ans)">✗ არა</button>' +
+          '<button class="mic-btn" id="mb_na_'  + safeId + '" data-id="' + item.id + '" data-sec="' + secKey + '" data-ans="na"  onclick="setMobileAnswer(this.dataset.id,this.dataset.sec,this.dataset.ans)">N/A</button>' +
+        '</div>' +
+        '<textarea class="mic-notes" id="mn_' + safeId + '" data-id="' + item.id + '" data-sec="' + secKey + '" placeholder="შენიშვნა..." rows="1" oninput="onNotesChangeMobile(this.dataset.id,this.dataset.sec,this)"></textarea>';
+      mc.appendChild(card);
+    });
+  });
+}
+
+function setMobileAnswer(itemId, secKey, answer) {
+  // Sync to desktop radio
+  const radioName = 'r_' + itemId;
+  const radio = document.querySelector('input[name="' + radioName + '"][value="' + answer + '"]');
+  if (radio) { radio.checked = true; onAnswerChange(itemId, secKey, radio); }
+  // Update mobile card UI
+  const safeId = itemId.replace('.','_');
+  const card = document.getElementById('mic_' + safeId);
+  if (card) {
+    card.className = 'mobile-item-card answered-' + answer;
+    ['yes','no','na'].forEach(a => {
+      const btn = document.getElementById('mb_' + a + '_' + safeId);
+      if (btn) btn.className = 'mic-btn' + (a === answer ? ' ' + a : '');
+    });
+  }
+}
+
+function onNotesChangeMobile(itemId, secKey, el) {
+  // Sync to desktop notes input
+  const desktopNote = document.querySelector('input[data-notes="' + itemId + '"]');
+  if (desktopNote) desktopNote.value = el.value;
+  // auto-resize
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function onAnswerChange(itemId, secKey, radioEl) {
+  const answer = radioEl.value;
+  // Update desktop row style
+  const tr = document.querySelector('tr[data-item-id="' + itemId + '"]');
+  if (tr) {
+    tr.className = 'item-row answered-' + answer;
+  }
+  // Sync to mobile card
+  setMobileAnswer(itemId, secKey, answer);
+}
+
+function onNotesChange(itemId, secKey, el) {
+  // Sync to mobile notes
+  const mn = document.getElementById('mn_' + itemId.replace('.','_'));
+  if (mn) mn.value = el.value;
+}
+
+
+// ============================================================
+//  LOAD FORM FOR DATE
+// ============================================================
+function loadFormForDate(dateStr) {
+  const data = getForm(dateStr);
+  const w = getWeather(dateStr);
+
+  // Weather display
+  document.getElementById('weatherDisplay').innerHTML = `
+    <div class="weather-box">
+      <div class="weather-icon">${w.icon}</div>
+      <div class="weather-info">
+        <h3 id='weatherTitle'>ამინდი — სოფ. უკანავა / Ukanava</h3>
+        <div class="temp">${w.temp}°C</div>
+        <div class="details">${w.temp}°C${w.precip>0?' | ნ. '+w.precip+'მმ':''}</div>
+      </div>
+      <div class="weather-date">
+        <strong>${dateStr}</strong><br>
+        ${GEORGIAN_DAYS[new Date(dateStr).getDay()]}
+      </div>
+    </div>`;
+
+  // Fill meta fields
+  document.getElementById('f_date').value = dateStr;
+  document.getElementById('f_weather').value = w.summary;
+  document.getElementById('f_amindia').value = `${w.temp}°C`;
+  document.getElementById('sig_inspector_date').value = dateStr;
+
+  if (data) {
+    document.getElementById('f_inspector').value = 'Nodar Tkhelidze / ნოდარ თხელიძე';
+    document.getElementById('f_time').value = data.time || '09:00';
+
+    // Fill responses
+    Object.keys(FORM_SECTIONS).forEach(secKey => {
+      FORM_SECTIONS[secKey].items.forEach(item => {
+        const resp = data.responses?.[secKey]?.[item.id];
+        if (resp) {
+          const radioName = `r_${item.id.replace('.','_')}`;
+          const radios = document.querySelectorAll(`[name="${radioName}"]`);
+          radios.forEach(r => { r.checked = r.value === resp.answer; })
+          if (resp.answer) setMobileAnswer(item.id, secKey, resp.answer);;
+          const noteArea = document.querySelector(`[data-notes="${item.id}"]`);
+          if (noteArea && resp.notes) noteArea.value = resp.notes;
+          const mn = document.getElementById('mn_' + item.id.replace('.','_'));
+          if (mn && resp.notes) { mn.value = resp.notes; mn.style.height = mn.scrollHeight+'px'; }
+        }
+      });
+    });
+  }
+
+}
+
+// ============================================================
+//  SAVE CURRENT FORM
+// ============================================================
+function saveForm() {
+  const dateStr = document.getElementById('f_date').value;
+  if (!dateStr) { alert('გთხოვთ მიუთითოთ თარიღი'); return; }
+
+  const responses = {};
+  Object.keys(FORM_SECTIONS).forEach(secKey => {
+    responses[secKey] = {};
+    FORM_SECTIONS[secKey].items.forEach(item => {
+      const radioName = 'r_' + item.id.replace('.','_');
+      const checked = document.querySelector('[name="' + radioName + '"]:checked');
+      const noteArea = document.querySelector('[data-notes="' + item.id + '"]');
+      responses[secKey][item.id] = {
+        answer: checked ? checked.value : '',
+        notes: noteArea ? noteArea.value : ''
+      };
+    });
+  });
+  // Section 7 free-form rows
+  responses['s7'] = {};
+  ['1','2','3'].forEach(n => {
+    const textEl = document.querySelector('#tbody_s7 tr:nth-child(' + n + ') input[type="text"]');
+    const checked = document.querySelector('[name="r7_' + n + '"]:checked');
+    const noteEl = document.querySelector('#tbody_s7 tr:nth-child(' + n + ') textarea');
+    responses['s7']['7.' + n] = {
+      text: textEl ? textEl.value : '',
+      answer: checked ? checked.value : '',
+      notes: noteEl ? noteEl.value : ''
+    };
+  });
+
+  const data = {
+    date: dateStr,
+    project: document.getElementById('f_project').value,
+    location: document.getElementById('f_location').value,
+    inspector: document.getElementById('f_inspector').value,
+    time: document.getElementById('f_time').value,
+    stage: document.getElementById('f_stage').value,
+    weather: document.getElementById('f_weather').value,
+    weatherData: getWeather(dateStr),
+    responses,
+    auto: false,
+    savedAt: new Date().toISOString()
+  };
+
+  saveFormData(dateStr, {...data, project: currentProject==='bakhvi2'?'Bakhvi 2':'Bakhvi 1', location: currentProject==='bakhvi2'?'Bakhvi 2 & 2b HPP':'Bakhvi 1 HPP'});
+  showSyncStatus('💾 ადგილობრივად შენახულია...', '#1a3a5c');
+  showToast('✅ შენახულია', '#2e7d32');
+  syncToDropbox();
+}
+
+// ============================================================
+//  PRINT
+// ============================================================
+function printForm() {
+  window.print();
+}
+
+// ============================================================
+//  PANEL NAVIGATION
+// ============================================================
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.textContent.includes(name === 'form' ? 'ფორმ' : name === 'archive' ? 'არქ' : 'PDF'))
+      t.classList.add('active');
+  });
+
+  if (name === 'archive') loadArchivePanel();
+  if (name === 'export') initExportPanel();
+}
+
+// ============================================================
+//  ARCHIVE PANEL
+// ============================================================
+function loadArchivePanel(from, to) {
+  const allDays = generateWorkingDays();
+  let days = allDays;
+  if (from) days = days.filter(d => d >= from);
+  if (to) days = days.filter(d => d <= to);
+
+  // Stats
+  const total = allDays.length;
+  const prefix = currentProject + '_';
+  const saved = Object.keys(formsDB).filter(k => k.startsWith(prefix)).length;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">სამუშაო დღე სულ</div></div>
+    <div class="stat-card"><div class="num">${saved}</div><div class="lbl">შენახული ფორმა</div></div>
+    <div class="stat-card"><div class="num">${total - saved}</div><div class="lbl">ავტო-გენერირებული</div></div>
+    <div class="stat-card"><div class="num">${allDays[allDays.length-1]||'-'}</div><div class="lbl">ბოლო სამუშაო დღე</div></div>
+  `;
+
+  const grid = document.getElementById('archiveGrid');
+  grid.innerHTML = '';
+
+  days.reverse().forEach(dateStr => {
+    const isSaved = !!formsDB[getProjectKey(dateStr)];
+    const w = getWeather(dateStr);
+    const d = new Date(dateStr);
+    const card = document.createElement('div');
+    card.className = 'archive-card';
+    const data = getForm(dateStr);
+    let yesCount=0, noCount=0;
+    Object.values(data.responses||{}).forEach(sec => {
+      Object.values(sec).forEach(r => {
+        if (r.answer==='yes') yesCount++;
+        else if (r.answer==='no') noCount++;
+      });
+    });
+    const comp = (yesCount+noCount) > 0 ? Math.round(yesCount/(yesCount+noCount)*100) : null;
+    const compStr = comp !== null ? (comp >= 90 ? '<span style="color:#2e7d32;font-weight:700">'+comp+'%</span>' : comp >= 70 ? '<span style="color:#e8a020;font-weight:700">'+comp+'%</span>' : '<span style="color:#c62828;font-weight:700">'+comp+'%</span>') : '';
+    if (noCount > 0) card.classList.add('has-no');
+    else if (isSaved) card.classList.add('saved');
+    else card.classList.add('auto');
+
+    card.innerHTML =
+      '<div style="flex:1;min-width:0">' +
+        '<div class="archive-card-date">' + dateStr + '</div>' +
+        '<div class="archive-card-day">' + GEORGIAN_DAYS[d.getDay()] + '</div>' +
+        '<div class="archive-card-info" style="margin-top:4px">' +
+          w.icon + ' ' + w.temp + '°C, ' + w.summary +
+          (compStr ? ' &nbsp;|&nbsp; შესაბამ.: ' + compStr : '') +
+        '</div>' +
+        '<div style="margin-top:6px">' +
+          '<span class="badge ' + (isSaved ? 'badge-ok' : 'badge-warn') + '">' + (isSaved ? '✅ შენახული' : '🤖 ავტო') + '</span>' +
+          (noCount > 0 ? ' <span style="font-size:0.72rem;color:#c62828">⚠️ '+noCount+' დარღვევა</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">' +
+        '<button data-d="' + dateStr + '" onclick="event.stopPropagation();openArchiveForm(this.dataset.d)" style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:7px;font-family:inherit;font-size:0.78rem;cursor:pointer;white-space:nowrap">✏️ ფორმა</button>' +
+        '<button data-d="' + dateStr + '" onclick="event.stopPropagation();openArchivePDF(this.dataset.d)" style="padding:6px 12px;background:#e8a020;color:#1a3a5c;border:none;border-radius:7px;font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap">📄 PDF</button>' +
+      '</div>';
+    card.onclick = () => openArchiveForm(dateStr);
+    grid.appendChild(card);
+  });
+}
+
+function filterArchive() {
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  loadArchivePanel(from||undefined, to||undefined);
+}
+
+// ============================================================
+//  EXPORT/REPORT
+// ============================================================
+function initExportPanel() {
+  const allDays = generateWorkingDays();
+  document.getElementById('expFrom').value = allDays[0] || '';
+  document.getElementById('expTo').value = allDays[allDays.length-1] || '';
+}
+
+function previewReport() {
+  const from = document.getElementById('expFrom').value;
+  const to = document.getElementById('expTo').value;
+  const allDays = generateWorkingDays().filter(d => d >= from && d <= to);
+
+  let html = `<h2 style="color:#1a3a5c;margin-bottom:16px">Bakhvi HPP — გარემოს მონიტორინგის ანგარიში</h2>
+    <p style="color:#666;margin-bottom:20px">პერიოდი: ${from} — ${to} | ფორმების რაოდენობა: ${allDays.length}</p>`;
+
+  allDays.forEach(dateStr => {
+    const data = getForm(dateStr);
+    if (!data) return;
+    const w = data.weatherData || getWeather(dateStr);
+    html += `
+      <div style="border:1px solid #ccc;border-radius:8px;padding:12px;margin-bottom:12px;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <strong style="color:#1a3a5c">${dateStr} — ${GEORGIAN_DAYS[new Date(dateStr).getDay()]}</strong>
+          <span style="font-size:0.85em;color:#666">${w.icon} ${w.temp}°C, ${w.condition}</span>
+        </div>
+        <div style="font-size:0.82em;color:#666">შემმოწმებელი: Nodar Tkhelidze | ${data.time} | ${data.auto?'ავტო':'ხელით'}</div>
+      </div>`;
+  });
+
+  document.getElementById('reportPreview').style.display = 'block';
+  document.getElementById('previewContent').innerHTML = html;
+}
+
+function openHtmlWindow(htmlContent) {
+  // Create blob URL — works with large content (signature images etc.)
+  const blob = new Blob([htmlContent], {type: 'text/html;charset=utf-8'});
+  const blobUrl = URL.createObjectURL(blob);
+
+  // Store current blob URL to revoke later
+  if (window._pdfBlobUrl) URL.revokeObjectURL(window._pdfBlobUrl);
+  window._pdfBlobUrl = blobUrl;
+
+  let overlay = document.getElementById('pdfOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'pdfOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#fff;display:flex;flex-direction:column';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML =
+    '<div style="background:#1a3a5c;color:white;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0">' +
+      '<span style="flex:1;font-weight:600;font-size:0.9rem">📄 Environmental Compliance Report</span>' +
+      '<button onclick="printPdfIframe()" style="padding:7px 16px;background:#e8a020;color:#1a3a5c;border:none;border-radius:7px;font-family:inherit;font-weight:700;cursor:pointer;font-size:0.85rem">🖨 PDF / ბეჭდვა</button>' +
+      '<button onclick="closePdfOverlay()" style="padding:7px 14px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:7px;font-family:inherit;cursor:pointer;font-size:0.85rem">✕ დახურვა</button>' +
+    '</div>' +
+    '<iframe id="pdfIframe" style="flex:1;border:none;width:100%;height:100%" allowfullscreen></iframe>';
+  overlay.style.display = 'flex';
+
+  // Set src after DOM update
+  requestAnimationFrame(() => {
+    const iframe = document.getElementById('pdfIframe');
+    if (iframe) iframe.src = blobUrl;
+  });
+}
+
+function exportPDF() {
+  const from = document.getElementById('expFrom') ? document.getElementById('expFrom').value : '';
+  const to   = document.getElementById('expTo')   ? document.getElementById('expTo').value   : '';
+  if (!from || !to) { alert('გთხოვთ მიუთითოთ პერიოდი'); return; }
+  const days = generateWorkingDays().filter(d => d >= from && d <= to);
+  if (days.length === 0) { alert('მითითებულ პერიოდში სამუშაო დღეები არ მოიძებნა'); return; }
+  if (days.length === 1) {
+    // Single day — open single PDF overlay
+    openArchivePDF(days[0]);
+  } else {
+    // Multiple days — generate combined report in overlay
+    showSyncStatus('📄 ' + days.length + ' ფორმა მზადდება...', '#1a3a5c');
+    const allPages = [];
+    days.forEach(dateStr => {
+      const data = getForm(dateStr);
+      const w = getWeather(dateStr);
+      const rh = generateSingleFormPDF(dateStr, data, w);
+      // extract body content
+      const m = rh.match(/<body>([\s\S]*?)<\/body>/);
+      if (m) {
+        const inner = m[1].replace(/<div class="no-print"[\s\S]*?<\/div>/, '');
+        allPages.push('<div class="fp"><div class="fp-date">📅 ' + dateStr + '</div>' + inner + '</div>');
+      }
+    });
+    const combined = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+      '<style>' +
+      'body{font-family:"Noto Sans Georgian",Arial,sans-serif;font-size:12px;padding:20px;color:#1a1a1a}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:8px}' +
+      'td,th{border:1px solid #ccc;padding:5px 8px;vertical-align:middle}' +
+      'th{background:#1a3a5c;color:white;font-size:0.78rem}' +
+      '.fp{border:2px solid #d0dce8;border-radius:8px;padding:16px;margin-bottom:24px;page-break-after:always}' +
+      '.fp:last-child{page-break-after:avoid}' +
+      '.fp-date{font-weight:700;color:#1a3a5c;font-size:0.9rem;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #d0dce8}' +
+      '.noprint{position:sticky;top:0;background:#1a3a5c;color:white;padding:10px 16px;display:flex;gap:10px;align-items:center;z-index:100}' +
+      'button{padding:7px 16px;background:#e8a020;color:#1a3a5c;border:none;border-radius:7px;font-family:inherit;font-weight:700;cursor:pointer}' +
+      'button.sec{background:rgba(255,255,255,0.15);color:white;font-weight:400}' +
+      '@media print{.noprint{display:none!important}.fp{page-break-after:always;border:none}}' +
+      '</style></head><body>' +
+      '<div class="noprint">' +
+        '<span style="flex:1;font-size:0.9rem;font-weight:600">📋 ' + days.length + ' ფორმა | ' + from + ' — ' + to + '</span>' +
+        '<button onclick="window.print()">🖨 PDF / ბეჭდვა</button>' +
+      '</div>' +
+      allPages.join('') +
+      '</body></html>';
+    openHtmlWindow(combined);
+    showSyncStatus('✅ ' + days.length + ' ფორმა მზადდა', 'var(--green)');
+  }
+}
+
+function generateAllPDFs() {
+  exportAllAsZip();
+}
+
+function clearForm() {
+  if (!confirm('გაასუფთავოს ფორმა?')) return;
+  document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false);
+  document.querySelectorAll('textarea').forEach(t => t.value = '');
+}
+
+async function saveToPDF() {
+  saveForm();
+  await new Promise(r => setTimeout(r, 200));
+  const dateStr = document.getElementById('f_date').value;
+  const w = getWeather(dateStr);
+  const data = getForm(dateStr);
+  const rh = generateSingleFormPDF(dateStr, data, w);
+  if (DROPBOX_TOKEN && rh) { showSyncStatus('☁ Dropbox-ში იტვირთება...','#1a3a5c'); await savePdfToDropbox(dateStr, rh); }
+}
+
+function generateSingleFormPDF(dateStr, data, w) {
+  const proj = currentProject === 'bakhvi2' ? 'Bakhvi 2 & 2b HPP' : 'Bakhvi 1 HPP';
+  const projShort = currentProject === 'bakhvi2' ? 'Bakhvi 2' : 'Bakhvi 1';
+  const inspector = data.inspector || 'Nodar Tkhelidze';
+  const timeStr   = data.time || '';
+  const wSum      = w ? (w.summary || '') : '';
+  const wTemp     = w ? (w.temp !== undefined ? w.temp + '°C' : '') : '';
+  const wPrecip   = w ? (w.precip !== undefined && w.precip > 0 ? ', ნ.' + w.precip + 'მმ' : '') : '';
+  const wFull     = wTemp + wPrecip + (wSum ? ', ' + wSum : '');
+
+  // Count stats
+  let totalYes=0, totalNo=0, totalNA=0, totalEmpty=0, totalItems=0;
+  Object.values(FORM_SECTIONS).forEach(sec => {
+    sec.items.forEach(item => {
+      totalItems++;
+      const secKey = 's' + item.id.split('.')[0];
+      const resp = data.responses && data.responses[secKey] && data.responses[secKey][item.id];
+      const ans = resp ? (resp.answer || '') : '';
+      if (ans==='yes') totalYes++;
+      else if (ans==='no') totalNo++;
+      else if (ans==='na') totalNA++;
+      else totalEmpty++;
+    });
+  });
+  const compliance = totalItems > 0 ? Math.round((totalYes + totalNA) / (totalYes + totalNo + totalNA || 1) * 100) : 0;
+  const compColor = compliance >= 90 ? '#2e7d32' : compliance >= 70 ? '#e8a020' : '#c62828';
+
+  // Build rows
+  let rows = '';
+  let rowNum = 0;
+  Object.keys(FORM_SECTIONS).forEach(secKey => {
+    const sec = FORM_SECTIONS[secKey];
+    rows += '<tr><td colspan="5" style="background:#1a3a5c;color:white;font-weight:700;padding:7px 10px;font-size:0.85rem;letter-spacing:0.3px">' + sec.title + '</td></tr>';
+    sec.items.forEach(item => {
+      rowNum++;
+      const resp = data.responses && data.responses[secKey] && data.responses[secKey][item.id];
+      const ans   = resp ? (resp.answer || '') : '';
+      const notes = resp ? (resp.notes  || '') : '';
+      const isNo  = ans === 'no';
+      const rowBg = rowNum % 2 === 0 ? '#f9fafb' : '#ffffff';
+      const checkY = ans==='yes' ? '✓' : '';
+      const checkN = ans==='no'  ? '✓' : '';
+      const checkA = ans==='na'  ? '✓' : '';
+      rows += '<tr style="background:' + (isNo ? '#fff3f3' : rowBg) + '">' +
+        '<td style="padding:5px 8px;width:32px;text-align:center;color:#888;font-size:0.78rem">' + item.id + '</td>' +
+        '<td style="padding:5px 10px;line-height:1.4">' + item.text + '</td>' +
+        '<td style="text-align:center;width:40px;font-size:1rem;color:#2e7d32;font-weight:700">' + checkY + '</td>' +
+        '<td style="text-align:center;width:40px;font-size:1rem;color:#c62828;font-weight:700">' + checkN + '</td>' +
+        '<td style="text-align:center;width:40px;font-size:0.85rem;color:#666">' + checkA + '</td>' +
+        '</tr>';
+      if (notes) {
+        rows += '<tr style="background:' + (isNo ? '#fff3f3' : '#fffde7') + '">' +
+          '<td></td>' +
+          '<td colspan="4" style="padding:4px 10px 6px 14px;font-size:0.82rem;color:#555;font-style:italic">💬 ' + notes + '</td>' +
+          '</tr>';
+      }
+    });
+  });
+
+  // Section 7 free-form
+  if (data.responses && data.responses.s7) {
+    const s7 = data.responses.s7;
+    if (Object.keys(s7).length > 0) {
+      rows += '<tr><td colspan="5" style="background:#1a3a5c;color:white;font-weight:700;padding:7px 10px;font-size:0.85rem">დამატებითი დაკვირვებები</td></tr>';
+      Object.values(s7).forEach(obs => {
+        if (obs.text || obs.answer) {
+          rows += '<tr><td colspan="5" style="padding:5px 10px;font-size:0.85rem">' + (obs.text||'') + (obs.answer ? ' — ' + obs.answer : '') + '</td></tr>';
+        }
+      });
+    }
+  }
+
+  const SIG_NOTE = inspector + ' / ' + (inspector === 'Nodar Tkhelidze' ? 'ნოდარ თხელიძე' : inspector);
+
+  const _pdfHtml = '<!DOCTYPE html><html lang="ka"><head><meta charset="UTF-8">' +
+    '<title>Environmental Compliance — ' + dateStr + '</title>' +
+    '<style>' +
+      '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;600;700&display=swap");' +
+      '*{margin:0;padding:0;box-sizing:border-box}' +
+      'body{font-family:"Noto Sans Georgian",Arial,sans-serif;font-size:11.5px;color:#1a1a1a;background:#fff;padding:0}' +
+      '.page{max-width:800px;margin:0 auto;padding:28px 32px}' +
+      /* Header */
+      '.header{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #1a3a5c}' +
+      '.logo-b{width:44px;height:44px;background:#1a3a5c;color:white;font-size:1.4rem;font-weight:900;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
+      '.header-text h1{font-size:1.05rem;color:#1a3a5c;font-weight:700;margin-bottom:2px}' +
+      '.header-text p{font-size:0.78rem;color:#666}' +
+      /* Meta grid */
+      '.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:16px;padding:12px 14px;background:#f0f4f8;border-radius:8px;border-left:4px solid #1a3a5c}' +
+      '.meta-item{display:flex;gap:6px;align-items:baseline}' +
+      '.meta-label{font-size:0.75rem;color:#666;white-space:nowrap;min-width:90px}' +
+      '.meta-value{font-size:0.85rem;font-weight:600;color:#1a1a1a}' +
+      /* Stats bar */
+      '.stats{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}' +
+      '.stat-box{flex:1;min-width:90px;padding:8px 12px;border-radius:8px;text-align:center}' +
+      '.stat-box .val{font-size:1.4rem;font-weight:700;line-height:1}' +
+      '.stat-box .lbl{font-size:0.7rem;color:#666;margin-top:3px}' +
+      '.stat-yes{background:#e8f5e9;border:1.5px solid #a5d6a7}.stat-yes .val{color:#2e7d32}' +
+      '.stat-no{background:#ffebee;border:1.5px solid #ef9a9a}.stat-no .val{color:#c62828}' +
+      '.stat-na{background:#f3f4f6;border:1.5px solid #ccc}.stat-na .val{color:#555}' +
+      '.stat-comp{border:2px solid ' + compColor + ';background:' + (compliance>=90?'#e8f5e9':compliance>=70?'#fff8e1':'#ffebee') + '}.stat-comp .val{color:' + compColor + '}' +
+      /* Table */
+      'table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:0.83rem}' +
+      'th{background:#1a3a5c;color:white;padding:6px 8px;text-align:center;font-weight:600;font-size:0.78rem}' +
+      'th.left{text-align:left}' +
+      'td{border-bottom:1px solid #e8edf2;vertical-align:middle}' +
+      'tr:last-child td{border-bottom:none}' +
+      /* Signature */
+      '.signature{margin-top:20px;padding-top:14px;border-top:2px solid #e0e0e0;display:flex;justify-content:space-between;align-items:flex-end}' +
+      '.sig-left .sig-name{font-size:0.88rem;font-weight:600;color:#1a3a5c;margin-bottom:20px}' +
+      '.sig-line{border-top:1.5px solid #333;width:200px;margin-top:4px;padding-top:4px;font-size:0.75rem;color:#666;text-align:center}' +
+      '.sig-date{font-size:0.82rem;color:#444}' +
+      /* Print button */
+      '.no-print{position:sticky;top:0;background:#1a3a5c;padding:10px 20px;display:flex;gap:10px;align-items:center;z-index:100}' +
+      'button{padding:7px 16px;background:white;color:#1a3a5c;border:none;border-radius:6px;font-family:inherit;font-weight:700;font-size:0.85rem;cursor:pointer}' +
+      'button.sec{background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.4)}' +
+      '@media print{.no-print{display:none!important}body{padding:0}.page{padding:16px}}' +
+    '</style></head><body>' +
+    '<div class="no-print">' +
+      '<span style="color:white;font-weight:700;flex:1">📄 ' + dateStr + ' — ' + projShort + ' — Environmental Compliance Report</span>' +
+      '<button onclick="window.print()">🖨 PDF / ბეჭდვა</button>' +
+      '<button class="sec" onclick="window.close()">✕ დახურვა</button>' +
+    '</div>' +
+    '<div class="page">' +
+      '<div class="header">' +
+        '<div class="logo-b">B</div>' +
+        '<div class="header-text">' +
+          '<h1>გარემოსდაცვითი ნორმების დაცვის საკონტროლო ფორმა</h1>' +
+          '<p>Bakhvi HPP — Environmental Compliance Inspection Form</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="meta">' +
+        '<div class="meta-item"><span class="meta-label">პროექტი:</span><span class="meta-value">' + projShort + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">ობიექტი:</span><span class="meta-value">' + proj + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">თარიღი:</span><span class="meta-value">' + dateStr + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">დრო:</span><span class="meta-value">' + timeStr + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">შემმოწმებელი:</span><span class="meta-value">' + inspector + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">ამინდი:</span><span class="meta-value">' + wFull + '</span></div>' +
+      '</div>' +
+      '<div class="stats">' +
+        '<div class="stat-box stat-yes"><div class="val">' + totalYes + '</div><div class="lbl">✓ დიახ</div></div>' +
+        '<div class="stat-box stat-no"><div class="val">' + totalNo + '</div><div class="lbl">✗ არა</div></div>' +
+        '<div class="stat-box stat-na"><div class="val">' + totalNA + '</div><div class="lbl">N/A</div></div>' +
+        '<div class="stat-box stat-comp"><div class="val">' + compliance + '%</div><div class="lbl">შესაბამისობა</div></div>' +
+      '</div>' +
+      '<table>' +
+        '<thead><tr>' +
+          '<th style="width:36px">№</th>' +
+          '<th class="left">ინსპექტირების საგნები</th>' +
+          '<th style="width:44px">დიახ</th>' +
+          '<th style="width:44px">არა</th>' +
+          '<th style="width:44px">N/A</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+      '<div class="signature">' +
+        '<div class="sig-left">' +
+          '<div class="sig-name" style="font-size:0.82rem;color:#555;margin-bottom:4px">შემმოწმებელი / Inspector:</div>' +
+          '<div style="font-weight:700;color:#1a3a5c;margin-bottom:8px">' + SIG_NOTE + '</div>' +
+          '<img src="' + INSPECTOR_SIG + '" style="height:48px;max-width:180px;display:block;margin-bottom:2px" alt="signature">' +
+          '<div style="border-top:1.5px solid #333;width:180px;padding-top:3px;font-size:0.72rem;color:#888">ხელმოწერა / Signature</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div style="font-size:0.82rem;color:#555;margin-bottom:4px">თარიღი / Date:</div>' +
+          '<div style="font-weight:700;color:#1a3a5c">' + dateStr + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</body></html>';
+
+  openHtmlWindow(_pdfHtml);
+  return _pdfHtml;
+}
+
+
+// ============================================================
+//  ROLES
+// ============================================================
+const ROLES = {
+  admin:     { label: 'Admin',     canEdit: true,  canViewAll: true,  canManageUsers: true  },
+  inspector: { label: 'Inspector', canEdit: true,  canViewAll: false, canManageUsers: false },
+  manager:   { label: 'Manager',   canEdit: false, canViewAll: true,  canManageUsers: false },
+  viewer:    { label: 'Viewer',    canEdit: false, canViewAll: true,  canManageUsers: false }
+};
+
+// ============================================================
+//  USERS CONFIG
+// ============================================================
+const DEFAULT_USERS = {
+  'nodar':     { hash: '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4',     fallback: 'fallback_7c540741',     role: 'admin',     name: 'Nodar Tkhelidze' },
+  'inspector': { hash: 'f8638b979b2f4f793ddb6dbd197e0ee25a7a6ea32b0ae22f5e3c5d119d839e75',  fallback: 'fallback_7c51e649',  role: 'inspector', name: 'Inspector'       },
+  'viewer':    { hash: '9af15b336e6a9619928537df30b2e6a2376569fcf9d7e773eccede65606529a0',  fallback: 'fallback_7c537b05',  role: 'viewer',    name: 'Viewer'          }
+};
+
+let USERS = {};
+
+function loadUsers() {
+  try { const s = localStorage.getItem('bakhvi_users'); USERS = s ? JSON.parse(s) : {...DEFAULT_USERS}; }
+  catch(e) { USERS = {...DEFAULT_USERS}; }
+}
+function saveUsers() {
+  try { localStorage.setItem('bakhvi_users', JSON.stringify(USERS)); } catch(e) {}
+}
+
+async function hashPassword(password) {
+  if (window.crypto && window.crypto.subtle) {
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    } catch(e) {}
+  }
+  let h = 5381;
+  for (let i = 0; i < password.length; i++) { h = ((h << 5) + h) ^ password.charCodeAt(i); h = h >>> 0; }
+  return 'fallback_' + h.toString(16).padStart(8,'0');
+}
+
+// ============================================================
+//  DROPBOX CONFIG — paste your token here after creating app
+// ============================================================
+let DROPBOX_TOKEN = (function(){ try { return localStorage.getItem('dbx_token') || ''; } catch(e) { return ''; } })();
+const DEFAULT_DBX_FOLDERS = {
+  bakhvi1: {
+    data:    '/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi1/data',
+    reports: '/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi1/reports',
+    csv:     '/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi1/statistics'
+  },
+  bakhvi2: {
+    data:    '/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi2/data',
+    reports: '/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi2/reports',
+    csv:     '/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi2/statistics'
+  }
+};
+let DBX_FOLDERS = JSON.parse((function(){ try { return localStorage.getItem('dbx_folders') || 'null'; } catch(e) { return 'null'; } })() || 'null') || JSON.parse(JSON.stringify(DEFAULT_DBX_FOLDERS));
+function saveDbxFolders() { try { localStorage.setItem('dbx_folders', JSON.stringify(DBX_FOLDERS)); } catch(e) {} }
+function getDbxDataPath() { const p = currentProject||'bakhvi1'; const f = p==='bakhvi2'?'bakhvi2_forms.json':'bakhvi1_forms.json'; return (DBX_FOLDERS[p]||DEFAULT_DBX_FOLDERS[p]).data+'/'+f; }
+function getDbxReportPath(d) { const p = currentProject||'bakhvi1'; return (DBX_FOLDERS[p]||DEFAULT_DBX_FOLDERS[p]).reports+'/'+d+'_report.html'; }
+function getDbxCsvPath(ym) { const p = currentProject||'bakhvi1'; return (DBX_FOLDERS[p]||DEFAULT_DBX_FOLDERS[p]).csv+'/'+ym+'_statistics.csv'; }
+
+// ============================================================
+//  AUTH STATE
+// ============================================================
+let currentUser = null;
+
+function checkAuth() {
+  const saved = (function(){ try { return sessionStorage.getItem('bakhvi_user'); } catch(e) { return window._bakhviUser ? JSON.stringify(window._bakhviUser) : null; } })();
+  if (saved) {
+    currentUser = JSON.parse(saved);
+    onLoginSuccess();
+  } else {
+    showLoginScreen();
+  }
+}
+
+function showLoginScreen() {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+}
+
+function hideLoginScreen() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim().toLowerCase();
+  const password = document.getElementById('loginPin').value;
+  const btn = document.querySelector('.btn-login');
+  if (!username || !password) { document.getElementById('loginError').textContent = '⚠️ შეიყვანეთ username და პაროლი'; return; }
+  if (password.length < 4) { document.getElementById('loginError').textContent = '⚠️ პაროლი მინ. 4 სიმბოლო'; return; }
+  btn.disabled = true; btn.textContent = '🔄 შემოწმება...';
+  const user = USERS[username];
+  if (user) {
+    const inputHash = await hashPassword(password);
+    const ok = inputHash === user.hash || (inputHash.startsWith('fallback_') && inputHash === user.fallback);
+    if (ok) {
+      currentUser = { username, role: user.role, name: user.name };
+      try { sessionStorage.setItem('bakhvi_user', JSON.stringify(currentUser)); } catch(e) { window._bakhviUser = currentUser; }
+      document.getElementById('loginError').textContent = '';
+      onLoginSuccess();
+    } else { document.getElementById('loginError').textContent = '❌ პაროლი არასწორია'; }
+  } else { document.getElementById('loginError').textContent = '❌ მომხმარებელი არ მოიძებნა'; }
+  btn.disabled = false; btn.textContent = '🔐 შესვლა';
+}
+
+function doLogout() {
+  try { sessionStorage.removeItem('bakhvi_user'); } catch(e) {} window._bakhviUser = null;
+  currentUser = null;
+  showLoginScreen();
+}
+
+function onLoginSuccess() {
+  hideLoginScreen();
+  applyRoleRestrictions();
+  document.getElementById('userLabel').textContent = currentUser.name + ' (' + currentUser.role + ')';
+  if (DROPBOX_TOKEN) syncFromDropbox();
+}
+
+function applyRoleRestrictions() {
+  const role = currentUser ? currentUser.role : 'viewer';
+  const rc = ROLES[role] || ROLES.viewer;
+  const adminBtn = document.getElementById('adminBtn');
+  if (adminBtn) adminBtn.style.display = role === 'admin' ? 'inline-block' : 'none';
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsBtn) settingsBtn.style.display = role === 'admin' ? 'inline-block' : 'none';
+  if (!rc.canEdit) {
+    document.querySelectorAll('[name^="r_"],[data-notes],#tbody_s7 input,#tbody_s7 textarea').forEach(el => el.disabled = true);
+    document.querySelectorAll('button.btn-primary,button.btn-outline').forEach(el => el.disabled = true);
+  }
+  if (role === 'viewer') {
+    document.querySelectorAll('#mainForm input,#mainForm textarea,#mainForm select').forEach(el => el.disabled = true);
+  }
+  // Attach listeners after restrictions applied
+}
+
+// ============================================================
+//  DROPBOX SYNC
+// ============================================================
+
+
+async function syncToDropbox() {
+  if (!DROPBOX_TOKEN) {
+    showDropboxSetup();
+    return;
+  }
+  const payload = JSON.stringify(formsDB, null, 2);
+  const blob = new Blob([payload], {type: 'application/json'});
+  try {
+    const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + DROPBOX_TOKEN,
+        'Dropbox-API-Arg': JSON.stringify({
+          path: getDbxDataPath(),
+          mode: 'overwrite',
+          autorename: false
+        }),
+        'Content-Type': 'application/octet-stream'
+      },
+      body: blob
+    });
+    if (res.ok) {
+      showSyncStatus('✅ Dropbox-ში შენახულია', 'green');
+    } else {
+      const err = await res.json();
+      showSyncStatus('❌ Dropbox შეცდომა: ' + (err.error_summary || res.status), 'red');
+    }
+  } catch(e) {
+    showSyncStatus('❌ ქსელის შეცდომა: ' + e.message, 'red');
+  }
+}
+
+async function syncFromDropbox() {
+  if (!DROPBOX_TOKEN) return;
+  try {
+    const res = await fetch('https://content.dropboxapi.com/2/files/download', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + DROPBOX_TOKEN,
+        'Dropbox-API-Arg': JSON.stringify({ path: getDbxDataPath() })
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // Merge: Dropbox data takes priority for dates not locally modified
+      Object.assign(formsDB, data);
+      saveDB();
+      loadArchivePanel();
+      showSyncStatus('🔄 სინქრონიზებულია Dropbox-თან', 'green');
+    }
+  } catch(e) { /* offline or file not found */ }
+}
+
+function showSyncStatus(msg, color) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || '#333';
+  setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+function showToast(msg, color) {
+  color = color || '#2e7d32';
+  let t = document.getElementById('autoSaveToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'autoSaveToast';
+    t.style.cssText = [
+      'position:fixed','bottom:80px','right:16px',
+      'padding:10px 18px','border-radius:10px',
+      'color:white','font-family:inherit','font-size:0.88rem',
+      'font-weight:600','z-index:9999',
+      'box-shadow:0 4px 16px rgba(0,0,0,0.2)',
+      'transition:opacity 0.4s','opacity:0','pointer-events:none',
+      'max-width:280px','word-break:break-word'
+    ].join(';');
+    document.body.appendChild(t);
+  }
+  t.style.background = color;
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+}
+
+
+
+function showDropboxSetup() {
+  const token = prompt(
+    'Dropbox Access Token შეიყვანეთ:\n\n' +
+    '1. dropbox.com/developers/apps\n' +
+    '2. შექმენი App → Full Dropbox access\n' +
+    '3. Permissions: files.content.write + read\n' +
+    '4. Generate Access Token\n\nToken:'
+  );
+  if (token && token.length > 10) {
+    DROPBOX_TOKEN = token.trim();
+    try { localStorage.setItem('dbx_token', DROPBOX_TOKEN); } catch(e) {}
+    syncToDropbox();
+  }
+}
+
+function clearDropboxToken() {
+  try { localStorage.removeItem('dbx_token'); } catch(e) {}
+  DROPBOX_TOKEN = '';
+  alert('Token წაიშალა');
+}
+
+
+// ============================================================
+//  MOBILE TAB SWITCHING
+// ============================================================
+function switchTab(panel) {
+  // Desktop nav tabs
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const dtab = document.querySelector('.nav-tab[onclick*="' + panel + '"]');
+  if (dtab) dtab.classList.add('active');
+  // Mobile tab buttons
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  const mtab = document.getElementById('tab-' + panel);
+  if (mtab) mtab.classList.add('active');
+  // Panels
+  showPanel(panel);
+}
+
+
+
+
+// ============================================================
+//  SERVICE WORKER — OFFLINE SUPPORT (GitHub Pages compatible)
+// ============================================================
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  // SW must be a real file — skip inline blob approach
+  // Instead, cache the page on first load using Cache API directly
+  if ('caches' in window) {
+    window.addEventListener('load', () => {
+      caches.open('bakhvi-v2').then(cache => {
+        cache.add(location.href).catch(() => {});
+      });
+    });
+  }
+}
+
+// ============================================================
+//  OFFLINE DETECTION
+// ============================================================
+window.addEventListener('offline', () => document.getElementById('offlineBadge').classList.add('show'));
+window.addEventListener('online',  () => document.getElementById('offlineBadge').classList.remove('show'));
+if (!navigator.onLine) document.getElementById('offlineBadge').classList.add('show');
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadUsers();
+  loadDB();
+  buildSectionRows();
+  checkAuth();
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f_date').value = today;
+  loadFormForDate(today);
+
+  document.getElementById('f_date').addEventListener('change', function() {
+    loadFormForDate(this.value);
+  });
+});
+
+// ============================================================
+//  PDF OVERLAY HELPERS
+// ============================================================
+function printPdfIframe() {
+  const f = document.getElementById('pdfIframe');
+  if (f && f.contentWindow) f.contentWindow.print(); else window.print();
+}
+function closePdfOverlay() {
+  const o = document.getElementById('pdfOverlay');
+  if (o) o.style.display = 'none';
+  if (window._pdfBlobUrl) { URL.revokeObjectURL(window._pdfBlobUrl); window._pdfBlobUrl = null; }
+}
+function openArchiveForm(dateStr) {
+  loadFormForDate(dateStr);
+  showPanel('form');
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  const tb = document.getElementById('tab-form');
+  if (tb) tb.classList.add('active');
+}
+function openArchivePDF(dateStr) {
+  const data = getForm(dateStr);
+  const w = getWeather(dateStr);
+  generateSingleFormPDF(dateStr, data, w);
+}
+
+// ============================================================
+//  CSV
+// ============================================================
+function generateMonthlyCSV(yearMonth) {
+  const allDays = generateWorkingDays().filter(d => d.startsWith(yearMonth));
+  if (!allDays.length) return null;
+  const hdr = ['თარიღი','ამინდი','ტემპ','ნალექი','შემმოწმებელი','დიახ','არა','N/A','შეუვსებელი','შესაბამისობა%'];
+  const rows = [hdr.join(',')];
+  allDays.forEach(dateStr => {
+    const d = getForm(dateStr);
+    const w = d.weatherData || getWeather(dateStr);
+    let yes=0,no=0,na=0,empty=0;
+    Object.values(FORM_SECTIONS).forEach(sec => {
+      sec.items.forEach(item => {
+        const sk='s'+item.id.split('.')[0];
+        const r=d.responses&&d.responses[sk]&&d.responses[sk][item.id];
+        const a=r?(r.answer||''):'';
+        if(a==='yes')yes++;else if(a==='no')no++;else if(a==='na')na++;else empty++;
+      });
+    });
+    const tot=yes+no+na;
+    const comp=tot>0?Math.round((yes+na)/tot*100):0;
+    rows.push([dateStr,'"'+(w.summary||'')+'"',w.temp||'',w.precip||0,'"Nodar Tkhelidze"',yes,no,na,empty,comp+'%'].join(','));
+  });
+  return '\uFEFF'+rows.join('\n');
+}
+function quickCsvDownload() {
+  const now=new Date();
+  const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const csv=generateMonthlyCSV(ym);
+  if(!csv){showToast('⚠️ მონაცემები ვერ მოიძებნა','#e8a020');return;}
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download=(currentProject==='bakhvi2'?'Bakhvi2':'Bakhvi1')+'_'+ym+'_statistics.csv';
+  a.click();
+  showToast('⬇ CSV ჩამოიტვირთა','#2e7d32');
+}
+function downloadCsvLocal() {
+  const mp=document.getElementById('csvMonthPicker');
+  const ym=mp?mp.value:new Date().toISOString().substring(0,7);
+  const csv=generateMonthlyCSV(ym);
+  if(!csv){showToast('⚠️ მონაცემები ვერ მოიძებნა','#e8a020');return;}
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=(currentProject==='bakhvi2'?'Bakhvi2':'Bakhvi1')+'_'+ym+'_statistics.csv';
+  a.click();
+  showToast('⬇ CSV ჩამოიტვირთა','#2e7d32');
+}
+
+// ============================================================
+//  DROPBOX
+// ============================================================
+async function savePdfToDropbox(dateStr, reportHtml) {
+  if (!DROPBOX_TOKEN) return false;
+  try {
+    const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+DROPBOX_TOKEN,
+        'Dropbox-API-Arg':JSON.stringify({path:getDbxReportPath(dateStr),mode:'overwrite',autorename:false}),
+        'Content-Type':'application/octet-stream'
+      },
+      body:new Blob([reportHtml],{type:'text/html'})
+    });
+    return res.ok;
+  } catch(e){return false;}
+}
+async function exportAllToDropbox() {
+  if (!DROPBOX_TOKEN){showDropboxSetup();return;}
+  const allDays=generateWorkingDays();
+  if(!allDays.length){showToast('⚠️ სამუშაო დღეები ვერ მოიძებნა','#e8a020');return;}
+  let done=0;
+  for(const dateStr of allDays){
+    const rh=generateSingleFormPDF(dateStr,getForm(dateStr),getWeather(dateStr));
+    await savePdfToDropbox(dateStr,rh);
+    done++;
+    if(done%10===0){
+      showToast('☁ '+done+'/'+allDays.length,'#1a3a5c');
+      showSyncStatus('☁ '+done+'/'+allDays.length,'#1a3a5c');
+      await new Promise(r=>setTimeout(r,200));
+    }
+  }
+  showToast('✅ Dropbox: '+done+' ფორმა','#2e7d32');
+  showSyncStatus('✅ Dropbox: '+done+' ფორმა','#2e7d32');
+}
+
+// ============================================================
+//  ZIP
+// ============================================================
+async function exportAllAsZip() {
+  if(typeof JSZip==='undefined'){showToast('❌ JSZip ვერ ჩაიტვირთა','#c62828');return;}
+  const allDays=generateWorkingDays();
+  if(!allDays.length){showToast('⚠️ სამუშაო დღეები ვერ მოიძებნა','#e8a020');return;}
+  const proj=(currentProject||'bakhvi1')==='bakhvi2'?'Bakhvi2':'Bakhvi1';
+  showToast('📦 ZIP მზადდება...','#1a3a5c');
+  const zip=new JSZip();
+  const folder=zip.folder('reports_individual');
+  const allPages=[];
+  let done=0;
+  for(const dateStr of allDays){
+    const rh=generateSingleFormPDF(dateStr,getForm(dateStr),getWeather(dateStr));
+    folder.file(dateStr+'_'+proj+'_report.html',rh);
+    const m=rh.match(/<body>([\s\S]*?)<\/body>/);
+    if(m) allPages.push('<div class="fp"><div class="fp-date">'+dateStr+'</div>'+m[1]+'</div>');
+    done++;
+    if(done%50===0){showSyncStatus('📦 '+done+'/'+allDays.length,'#1a3a5c');await new Promise(r=>setTimeout(r,5));}
+  }
+  const combined='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;font-size:12px;padding:20px}table{width:100%;border-collapse:collapse;margin-bottom:8px}td,th{border:1px solid #ccc;padding:5px 8px}th{background:#1a3a5c;color:white}.fp{border:2px solid #d0dce8;border-radius:8px;padding:16px;margin-bottom:20px;page-break-after:always}.fp-date{font-weight:700;color:#1a3a5c;border-bottom:2px solid #d0dce8;padding-bottom:6px;margin-bottom:10px}.noprint{position:sticky;top:0;background:#1a3a5c;color:white;padding:10px 16px;display:flex;gap:10px;align-items:center}button{padding:7px 16px;background:#e8a020;color:#1a3a5c;border:none;border-radius:7px;cursor:pointer;font-weight:700}@media print{.noprint{display:none!important}}</style></head><body><div class="noprint"><strong style="flex:1">'+proj+' — '+allDays.length+' ფორმა</strong><button onclick="window.print()">🖨 PDF</button></div>'+allPages.join('')+'</body></html>';
+  zip.file(proj+'_combined_report.html',combined);
+  zip.file(proj+'_data_backup.json',JSON.stringify(Object.fromEntries(allDays.map(d=>[d,getForm(d)])),null,2));
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=proj+'_reports_'+new Date().toISOString().split('T')[0]+'.zip';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('✅ ZIP ჩამოიტვირთა — '+done+' ფორმა','#2e7d32');
+  showSyncStatus('✅ ZIP მზად','#2e7d32');
+}
+
+// ============================================================
+//  SETTINGS
+// ============================================================
+function showSettings(){
+  const def={
+    bakhvi1:{data:'/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi1/data',
+             reports:'/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi1/reports',
+             csv:'/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi1/statistics'},
+    bakhvi2:{data:'/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi2/data',
+             reports:'/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi2/reports',
+             csv:'/Bakhvi Dropbox/Nodar Tkhelidze/08. Environmental/8.32 ESG Monitoring App/Bakhvi2/statistics'}
+  };
+  const f=(typeof DBX_FOLDERS!=='undefined'&&DBX_FOLDERS)?DBX_FOLDERS:def;
+  ['b1','b2'].forEach(p=>{
+    const k=p==='b1'?'bakhvi1':'bakhvi2';
+    ['data','reports','csv'].forEach(type=>{
+      const el=document.getElementById('s_'+p+'_'+type);
+      if(el) el.value=f[k][type]||'';
+    });
+  });
+  const mp=document.getElementById('csvMonthPicker');
+  if(mp){const now=new Date();mp.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');}
+  document.getElementById('settingsOverlay').style.display='flex';
+}
+function closeSettings(){document.getElementById('settingsOverlay').style.display='none';}
+function saveSettings(){
+  if(typeof DBX_FOLDERS==='undefined')return;
+  ['b1','b2'].forEach(p=>{
+    const k=p==='b1'?'bakhvi1':'bakhvi2';
+    ['data','reports','csv'].forEach(type=>{
+      const el=document.getElementById('s_'+p+'_'+type);
+      if(el&&DBX_FOLDERS[k]) DBX_FOLDERS[k][type]=el.value.trim();
+    });
+  });
+  saveDbxFolders();closeSettings();showToast('✅ პარამეტრები შენახულია','#2e7d32');
+}
+function resetFolders(){
+  if(typeof DEFAULT_DBX_FOLDERS!=='undefined'&&typeof DBX_FOLDERS!=='undefined')
+    Object.assign(DBX_FOLDERS,JSON.parse(JSON.stringify(DEFAULT_DBX_FOLDERS)));
+  saveDbxFolders();showSettings();showToast('↺ Default აღდგა','#1a3a5c');
+}
+async function manualCsvExport(){
+  const mp=document.getElementById('csvMonthPicker');
+  const ym=mp?mp.value:'';
+  if(!ym){alert('აირჩიე თვე');return;}
+  const csv=generateMonthlyCSV(ym);
+  if(!csv){showToast('⚠️ '+ym+' — მონაცემები ვერ მოიძებნა','#e8a020');return;}
+  if(!DROPBOX_TOKEN){showDropboxSetup();return;}
+  const res=await fetch('https://content.dropboxapi.com/2/files/upload',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+DROPBOX_TOKEN,'Dropbox-API-Arg':JSON.stringify({path:getDbxCsvPath(ym),mode:'overwrite'}),'Content-Type':'application/octet-stream'},
+    body:new Blob([csv],{type:'text/csv;charset=utf-8'})
+  });
+  showToast(res.ok?'✅ CSV Dropbox-ში შენახულია':'❌ CSV შეცდომა',res.ok?'#2e7d32':'#c62828');
+}
+
+// ============================================================
+//  ADMIN
+// ============================================================
+function showAdminPanel(){if(currentUser&&currentUser.role==='admin'){renderAdminPanel();document.getElementById('adminOverlay').style.display='flex';}}
+function closeAdminPanel(){document.getElementById('adminOverlay').style.display='none';}
+function renderAdminPanel(){
+  const tbody=document.getElementById('adminUserTable');
+  if(!tbody)return;
+  tbody.innerHTML='';
+  Object.entries(USERS||{}).forEach(([uname,user])=>{
+    const tr=document.createElement('tr');
+    const opts=['admin','inspector','viewer'].map(r=>'<option value="'+r+'"'+(user.role===r?' selected':'')+'>'+r+'</option>').join('');
+    const del=uname!==currentUser.username?'<button data-u="'+uname+'" onclick="deleteUser(this.dataset.u)" style="padding:4px 10px;background:#c62828;color:#fff;border:none;border-radius:6px;cursor:pointer">🗑</button>':'';
+    tr.innerHTML='<td style="padding:8px">'+uname+'</td><td style="padding:8px">'+(user.name||uname)+'</td><td style="padding:8px"><select data-u="'+uname+'" onchange="changeRole(this.dataset.u,this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid #ccc">'+opts+'</select></td><td style="padding:8px;display:flex;gap:6px"><button data-u="'+uname+'" onclick="resetPassword(this.dataset.u)" style="padding:4px 10px;background:#e8a020;border:none;border-radius:6px;cursor:pointer">🔑</button>'+del+'</td>';
+    tbody.appendChild(tr);
+  });
+}
+async function addNewUser(){
+  const u=document.getElementById('newUsername').value.trim().toLowerCase();
+  const n=document.getElementById('newName').value.trim();
+  const p=document.getElementById('newPassword').value;
+  const r=document.getElementById('newRole').value;
+  const err=document.getElementById('adminError');
+  if(!u||!n||!p){if(err)err.textContent='⚠️ ყველა ველი სავალდებულოა';return;}
+  if(p.length<4){if(err)err.textContent='⚠️ მინ. 4 სიმბოლო';return;}
+  if((USERS||{})[u]){if(err)err.textContent='⚠️ username უკვე არსებობს';return;}
+  const hash=await hashPassword(p);
+  if(!USERS)window.USERS={};
+  USERS[u]={hash,fallback:hash,role:r,name:n};
+  saveUsers();if(err)err.textContent='';
+  ['newUsername','newName','newPassword'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderAdminPanel();showToast('✅ '+u+' დამატებულია','#2e7d32');
+}
+function changeRole(u,r){if(USERS&&USERS[u]){USERS[u].role=r;saveUsers();showToast('✅ '+u+' → '+r,'#2e7d32');}}
+async function resetPassword(u){
+  const p=prompt('"'+u+'" — ახალი პაროლი (მინ. 4):');
+  if(!p||p.length<4){alert('⚠️ მინ. 4 სიმბოლო');return;}
+  if(USERS&&USERS[u]){USERS[u].hash=await hashPassword(p);USERS[u].fallback=USERS[u].hash;saveUsers();showToast('✅ პაროლი განახლდა: '+u,'#2e7d32');}
+}
+function deleteUser(u){
+  if(!confirm('"'+u+'" წაიშალოს?'))return;
+  if(USERS)delete USERS[u];
+  saveUsers();renderAdminPanel();showToast('🗑 '+u+' წაიშალა','#c62828');
+}
+
+</script>
+</div><!-- end appContainer -->
+</body>
+</html>
