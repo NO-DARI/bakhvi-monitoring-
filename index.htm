@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a3a5c">
+  <title>Bakhvi HPP - გარემოს მონიტორინგი</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --primary: #1a3a5c;
+      --primary-light: #2a5a8c;
+      --accent: #e8a020;
+      --green: #2e7d32;
+      --red: #c62828;
+      --gray: #546e7a;
+      --bg: #f0f3f7;
+      --card: #ffffff;
+      --border: #cfd8dc;
+      --text: #1c2b36;
+      --shadow: 0 2px 12px rgba(26,58,92,0.10);
+      --nav-h: 56px;
+      --tab-h: 48px;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; font-family: 'Noto Sans Georgian', sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 60px; }
+    header { background-color: var(--primary); color: white; padding: 15px; text-align: center; font-weight: 600; font-size: 16pt; box-shadow: var(--shadow); }
+    
+    .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+    .card { background: var(--card); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 5px; color: var(--primary); font-size: 10pt; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 11pt; outline: none; background: #fafafa; }
+    .form-control:focus { border-color: var(--primary-light); background: #fff; }
+    
+    .btn { display: block; width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 11pt; cursor: pointer; text-align: center; margin-top: 10px; }
+    .btn:hover { background: var(--primary-light); }
+    .alert-info { background-color: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 6px; font-size: 9.5pt; margin-top: 5px; border-left: 4px solid #1e88e5; }
+  </style>
+</head>
+<body>
+
+  <header>Bakhvi HPP — გარემოსდაცვითი მონიტორინგი</header>
+
+  <div class="container">
+    <div class="card">
+      <h3 style="color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--bg); padding-bottom: 5px;">ახალი ფორმის შევსება</h3>
+      
+      <div class="form-group">
+        <label>პროექტი</label>
+        <input type="text" id="Project" class="form-control" value="BK1" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>საიტის მდებარეობა</label>
+        <input type="text" id="SiteLocation" class="form-control" value="Ukanava" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>ინსპექტირების თარიღი</label>
+        <input type="date" id="InspectionDate" class="form-control" onchange="updateWeatherAndStatusByDate()">
+      </div>
+
+      <div class="form-group">
+        <label>ამინდის პროგნოზი (ავტომატური)</label>
+        <input type="text" id="WeatherSummary" class="form-control" style="font-weight:bold;" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>სამუშაო სტატუსი (ავტომატური)</label>
+        <input type="text" id="ConstructionStageStatus" class="form-control" style="font-weight:bold;" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>ინსპექტორი</label>
+        <input type="text" id="InspectorName" class="form-control" value="Nodar Tkhelidze" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>მობილიზებული ტექნიკა</label>
+        <textarea id="MachineryList" class="form-control" rows="2" readonly>Cat 349, Cat-330, Doosan 480, Liugong-314, Ural, HOWO</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>1.1 გზების მორწყვა</label>
+        <input type="text" id="RoadWatering" class="form-control" value="N/A (—)" readonly>
+        <div class="alert-info">უკანავას საიტის სპეციფიკიდან გამომდინარე, მოცემული პუნქტი მონიშნულია როგორც N/A.</div>
+      </div>
+
+      <button class="btn" onclick="saveReport()">ანგარიშის შენახვა და სინქრონიზაცია</button>
+    </div>
+  </div>
+
+  <script>
+    // აპლიკაციის ჩატვირთვისას მიმდინარე თარიღის დაყენება
+    window.onload = function() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('InspectionDate').value = today;
+      updateWeatherAndStatusByDate();
+    };
+
+    // ძირითადი ლოგიკა: კალენდარში თარიღის ცვლილებისას ავტომატური გადათვლა
+    function updateWeatherAndStatusByDate() {
+      const dateInput = document.getElementById('InspectionDate').value;
+      if (!dateInput) return;
+
+      const selectedDate = new Date(dateInput);
+      const month = selectedDate.getMonth(); // 0 = იანვარი, 11 = დეკემბერი
+      const day = selectedDate.getDate();
+
+      let weather = "მზიანი / ცვალებადი";
+      let status = "აქტიური მშენებლობა";
+
+      // ბახვის ჰესების კლიმატური ზონის ლოგიკა (დიდთოვლობა: 20 დეკემბერი - 25 თებერვალი)
+      const isDecemberWinter = (month === 11 && day >= 20);
+      const isJanuary = (month === 0);
+      const isFebruaryWinter = (month === 1 && day <= 25);
+
+      if (isDecemberWinter || isJanuary || isFebruaryWinter) {
+        weather = "თოვლი / ყინვა";
+        status = "სამუშაოები შეჩერებულია დიდთოვლობის გამო";
+      }
+
+      // ველების მყისიერი განახლება ინტერფეისში
+      document.getElementById('WeatherSummary').value = weather;
+      document.getElementById('ConstructionStageStatus').value = status;
+      
+      // სტილების დინამიური შეცვლა ვიზუალური აქცენტისთვის
+      if (weather === "თოვლი / ყინვა") {
+        document.getElementById('WeatherSummary').style.color = "#0d47a1";
+        document.getElementById('ConstructionStageStatus').style.color = "#c62828";
+      } else {
+        document.getElementById('WeatherSummary').style.color = "#2e7d32";
+        document.getElementById('ConstructionStageStatus').style.color = "#1a3a5c";
+      }
+    }
+
+    function saveReport() {
+      const report = {
+        project: document.getElementById('Project').value,
+        location: document.getElementById('SiteLocation').value,
+        date: document.getElementById('InspectionDate').value,
+        weather: document.getElementById('WeatherSummary').value,
+        status: document.getElementById('ConstructionStageStatus').value,
+        inspector: document.getElementById('InspectorName').value
+      };
+      
+      alert(`✅ რეპორტი წარმატებით დაგენერირდა!\nთარიღი: ${report.date}\nამინდი: ${report.weather}\nსტატუსი: ${report.status}`);
+      console.log("მონაცემები მზად არის ბაზაში გადასაცემად:", report);
+    }
+  </script>
+</body>
+</html>
